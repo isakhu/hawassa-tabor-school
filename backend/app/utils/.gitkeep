@@ -1,0 +1,8 @@
+# utils/
+# This directory will contain stateless utility/helper functions used across the backend.
+# Planned utility modules:
+#   pagination.py    → helper to build paginated query results and response metadata
+#   email.py         → send transactional emails (welcome, password reset, notifications)
+#   validators.py    → custom field validators (e.g., phone number, student ID format)
+#   date_helpers.py  → date arithmetic utilities (term dates, age calculation)
+#   response.py      → standardized API response envelope builder

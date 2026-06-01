@@ -1,0 +1,8 @@
+// hooks/
+// This directory will contain custom React hooks that encapsulate reusable stateful logic.
+// Examples:
+//   - useAuth()         → access current user, login, logout
+//   - useStudents()     → fetch and cache student list via React Query
+//   - useAttendance()   → fetch and mutate attendance records
+//   - useDebounce()     → debounce search input values
+//   - usePagination()   → manage page/pageSize state for tables

@@ -1,0 +1,10 @@
+# migrations/
+# This directory will contain Alembic database migration scripts.
+# Alembic tracks schema changes as versioned migration files,
+# allowing the database schema to evolve safely over time.
+# Setup steps (to be done during implementation):
+#   1. alembic init migrations
+#   2. Configure alembic.ini with DATABASE_URL
+#   3. Generate migrations: alembic revision --autogenerate -m "description"
+#   4. Apply migrations: alembic upgrade head
+#   5. Rollback: alembic downgrade -1

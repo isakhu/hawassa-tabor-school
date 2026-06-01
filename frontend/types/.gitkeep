@@ -1,0 +1,8 @@
+// types/
+// This directory will contain all shared TypeScript type definitions and interfaces
+// used across the frontend application.
+// Examples:
+//   - User, Student, Teacher, Class, Grade, Attendance, Announcement interfaces
+//   - API response wrapper types (PaginatedResponse<T>, ApiError)
+//   - Form input types aligned with Zod schemas
+//   - Enums: UserRole, AttendanceStatus, GradeScale

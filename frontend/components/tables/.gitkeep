@@ -1,0 +1,5 @@
+// tables/
+// This directory will contain reusable data table components.
+// Examples: StudentsTable, TeachersTable, GradesTable, AttendanceTable.
+// Tables will support sorting, filtering, pagination, and row-level actions.
+// Will likely use TanStack Table (react-table) under the hood.
