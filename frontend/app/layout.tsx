@@ -1,31 +1,29 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-// ─── Fonts ────────────────────────────────────────────────────────────────────
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
 });
-
-// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
   title: {
-    default: "School Management System",
-    template: "%s | School Management System",
+    default: "EduCore — School Management System",
+    template: "%s | EduCore",
   },
   description:
-    "A comprehensive platform for managing students, teachers, classes, attendance, and grades.",
+    "The future of school management. Manage students, teachers, classes, attendance, and grades — all in one platform.",
 };
-
-// ─── Root layout ──────────────────────────────────────────────────────────────
 
 export default function RootLayout({
   children,
@@ -33,11 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body
-        style={{ backgroundColor: "#0a0a0f" }}
-        className="min-h-screen antialiased"
-      >
+    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+      <body className="min-h-screen antialiased" style={{ backgroundColor: "#08080f" }}>
         {children}
       </body>
     </html>
