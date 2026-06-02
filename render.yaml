@@ -35,7 +35,7 @@ services:
         value: production
 
       - key: ALLOWED_ORIGINS
-        value: "https://your-frontend.vercel.app"  # update with real frontend URL
+        value: "http://localhost:3000,https://your-app.vercel.app"  # update with real Vercel URL after deploy
 
       - key: PYTHON_VERSION
         value: "3.11.0"      # use 3.11 for best wheel compatibility on Render

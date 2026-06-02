@@ -1,80 +1,132 @@
-# 🎓 School Management System API
+# EduCore — School Management System
 
-A production-style backend system built with **FastAPI + PostgreSQL + JWT authentication**.  
-This project simulates a real-world school management platform with role-based access control.
+A full-stack school management platform built with Next.js 14 and FastAPI.
 
----
-
-## 🚀 Features
-
-### 🔐 Authentication
-- JWT-based login system
-- Secure password hashing (bcrypt)
-- Role-based access control (Admin, Teacher, Student)
-
-### 👨‍🎓 Student Management
-- Full CRUD operations
-- Role-based permissions
-- Student profile linking with user accounts
-
-### 👨‍🏫 Teacher Management
-- CRUD operations
-- Subject & department assignment
-- Role-restricted access
-
-### 🏫 Class Management
-- Class creation and enrollment support
-- Teacher-class assignment structure
-
-### 📅 Attendance System
-- Mark attendance (Present / Absent / Late)
-- Duplicate prevention per student per day
-- Role-based access control
-
-### 📊 Grading System
-- Custom grading scale (A+ to F)
-- Automatic grade calculation
-- GPA-ready structure
+## Live Demo
+- **Frontend:** https://your-app.vercel.app *(update after deploy)*
+- **Backend API:** https://school-managment-system-h7mn.onrender.com
+- **API Docs:** https://school-managment-system-h7mn.onrender.com/docs
 
 ---
 
-## 🧠 Tech Stack
+## Tech Stack
 
-- FastAPI
-- PostgreSQL
-- SQLAlchemy
-- Pydantic
-- JWT (Auth)
-- Passlib (Security)
-
----
-
-## 🏗️ Architecture
-
-- REST API design
-- Modular folder structure
-- Service-oriented backend design
-- Role-based access control (RBAC)
+| Layer     | Technology |
+|-----------|-----------|
+| Frontend  | Next.js 14 (App Router), TypeScript, Tailwind CSS |
+| Backend   | FastAPI, SQLAlchemy (async), PostgreSQL |
+| Auth      | JWT (python-jose) + bcrypt (passlib) |
+| Hosting   | Frontend → Vercel · Backend → Render · DB → Render PostgreSQL |
 
 ---
 
-## ⚙️ Setup Instructions
+## Features
+
+- **JWT Authentication** with role-based access control (RBAC)
+- **Admin Dashboard** — stats, activity feed, quick actions
+- **Student Management** — CRUD with profile linking
+- **Teacher Management** — CRUD with subject/department info
+- **Class Management** — card-based UI, student enrollment
+- **Attendance System** — mark attendance with Present/Late/Absent toggles, summary reports, CSV export
+- **Grades System** — submit grades, auto-calculate letter grades (A+ scale), per-student reports
+- **Glassmorphism UI** — dark theme, animated mesh backgrounds, responsive
+
+---
+
+## Roles
+
+| Role    | Access |
+|---------|--------|
+| Admin   | Full CRUD on everything |
+| Teacher | View/manage own classes, mark attendance, enter grades |
+| Student | View own classes, grades, and attendance only |
+
+---
+
+## Local Development
+
+### Prerequisites
+- Node.js 18+
+- Python 3.11+
+- PostgreSQL 14+
+
+### Backend
 
 ```bash
-# 1. Clone repo
-git clone <your-repo-url>
-
-# 2. Go to backend
 cd backend
-
-# 3. Create virtual environment
 python -m venv venv
-
-# 4. Activate venv
-venv\Scripts\activate
-
-# 5. Install dependencies
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
-
-# 6. Run server
+cp ../.env.example .env        # fill in your values
 uvicorn main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local   # or create manually
+npm run dev
+```
+
+Open http://localhost:3000
+
+---
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+```
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/school_db
+SECRET_KEY=your-secret-key-min-32-chars
+ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
+ENVIRONMENT=development
+```
+
+### Frontend (`frontend/.env.local`)
+```
+NEXT_PUBLIC_API_URL=https://school-managment-system-h7mn.onrender.com/api/v1
+NEXT_PUBLIC_APP_NAME=EduCore
+```
+
+---
+
+## Deployment
+
+### Backend → Render
+1. Connect GitHub repo to Render
+2. Root directory: `backend`
+3. Build: `pip install -r requirements.txt`
+4. Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables in Render dashboard
+
+### Frontend → Vercel
+1. Import GitHub repo on vercel.com
+2. Framework: Next.js (auto-detected)
+3. Root directory: `frontend`
+4. Add env var: `NEXT_PUBLIC_API_URL`
+5. Deploy
+
+After deploy, update `ALLOWED_ORIGINS` in Render to include your Vercel URL.
+
+---
+
+## Project Structure
+
+```
+school-management-system/
+├── backend/                  FastAPI backend
+│   ├── app/
+│   │   ├── api/routes/       auth, students, teachers, classes, attendance, grades
+│   │   ├── core/             config, database, security
+│   │   ├── models/           SQLAlchemy ORM models
+│   │   ├── schemas/          Pydantic schemas
+│   │   └── utils/            grading utility
+│   ├── main.py
+│   └── requirements.txt
+└── frontend/                 Next.js frontend
+    ├── app/                  App Router pages
+    ├── components/           Sidebar, TopBar, Modal, Toast, DataTable
+    └── lib/                  api.ts, auth.ts, constants.ts
+```

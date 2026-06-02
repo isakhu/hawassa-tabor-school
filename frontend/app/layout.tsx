@@ -23,6 +23,15 @@ export const metadata: Metadata = {
   },
   description:
     "The future of school management. Manage students, teachers, classes, attendance, and grades — all in one platform.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
+  openGraph: {
+    title: "EduCore — School Management System",
+    description: "The future of school management.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -32,6 +41,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body className="min-h-screen antialiased" style={{ backgroundColor: "#08080f" }}>
         {children}
       </body>
