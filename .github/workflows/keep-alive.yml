@@ -1,22 +1,7 @@
-name: Keep Render Alive
-
 on:
   schedule:
-    - cron: '*/10 * * * *'  # every 10 minutes
-  workflow_dispatch:          # allows manual trigger too
-
-jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping EduCore Backend
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://school-managment-system-h7mn.onrender.com/health)
-          echo "Status code: $response"
-          if [ $response -eq 200 ]; then
-            echo "✅ Backend is alive"
-          else
-            echo "❌ Backend returned $response"
-            exit 1
-          fi
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
