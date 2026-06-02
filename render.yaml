@@ -1,0 +1,41 @@
+## Render Blueprint
+## Docs: https://render.com/docs/blueprint-spec
+## Deploy: connect this repo on render.com → "New Blueprint Instance"
+
+services:
+  - type: web
+    name: school-management-api
+    runtime: python
+    region: oregon
+    plan: free
+
+    # Render sets the working directory to repo root, so prefix all paths
+    rootDir: backend
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # Health check — Render will restart the service if this fails
+    healthCheckPath: /health
+
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # set manually in Render dashboard (from cloud DB)
+
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a secure random value
+
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "30"
+
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: "7"
+
+      - key: ENVIRONMENT
+        value: production
+
+      - key: ALLOWED_ORIGINS
+        value: "https://your-frontend.vercel.app"  # update with real frontend URL
+
+      - key: PYTHON_VERSION
+        value: "3.11.0"      # use 3.11 for best wheel compatibility on Render
