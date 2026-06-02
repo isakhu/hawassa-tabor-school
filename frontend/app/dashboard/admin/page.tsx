@@ -126,9 +126,12 @@ export default function AdminDashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="max-lg:grid-cols-1">
         {/* Activity feed */}
         <div className="glass-card" style={{ padding: 24 }}>
-          <h3 style={{ fontFamily: "var(--font-syne)", fontSize: 16, fontWeight: 700, color: "#e8e8f0", marginBottom: 16 }}>
-            Recent Activity
-          </h3>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h3 style={{ fontFamily: "var(--font-syne)", fontSize: 16, fontWeight: 700, color: "#e8e8f0" }}>
+              Recent Activity
+            </h3>
+            <a href="/attendance" style={{ fontSize: 12, color: "#818cf8", textDecoration: "none", fontWeight: 600 }}>View all →</a>
+          </div>
           {loading
             ? [0,1,2,3,4].map((i) => <ActivitySkeleton key={i} />)
             : [
