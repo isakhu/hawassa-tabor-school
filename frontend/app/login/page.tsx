@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE_URL } from "@/lib/constants";
@@ -199,6 +199,18 @@ function Spinner() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
+  return (
+    <>
+      <MeshBackground />
+
+      <Suspense fallback={<div>Loading...</div>}>
+        <LoginContent />
+      </Suspense>
+    </>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered") === "true";
@@ -280,20 +292,17 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <MeshBackground />
-
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          minHeight: "100vh",
-          display: "flex",
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? "translateY(0)" : "translateY(20px)",
-          transition: "opacity 0.5s ease, transform 0.5s ease",
-        }}
-      >
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
+        minHeight: "100vh",
+        display: "flex",
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? "translateY(0)" : "translateY(20px)",
+        transition: "opacity 0.5s ease, transform 0.5s ease",
+      }}
+    >
         {/* ── Left panel (hidden on mobile) ── */}
         <div
           style={{
@@ -598,6 +607,5 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </>
   );
 }
