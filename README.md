@@ -1,82 +1,80 @@
-# School Management System
+# 🎓 School Management System API
 
-A full-stack web application for managing school operations including students, teachers, classes, attendance, and grades.
+A production-style backend system built with **FastAPI + PostgreSQL + JWT authentication**.  
+This project simulates a real-world school management platform with role-based access control.
 
-## Tech Stack
+---
 
-| Layer      | Technology                              |
-|------------|-----------------------------------------|
-| Frontend   | Next.js 15 (App Router) + TypeScript    |
-| Styling    | Tailwind CSS                            |
-| Backend    | FastAPI + Python                        |
-| Database   | PostgreSQL                              |
-| ORM        | SQLAlchemy (async) + Alembic            |
-| Auth       | JWT (access + refresh tokens)           |
-| Container  | Docker + Docker Compose                 |
+## 🚀 Features
 
-## Project Structure
+### 🔐 Authentication
+- JWT-based login system
+- Secure password hashing (bcrypt)
+- Role-based access control (Admin, Teacher, Student)
 
-```
-school-management-system/
-├── frontend/          # Next.js 15 application
-│   ├── app/           # App Router pages and layouts
-│   ├── components/    # Reusable UI components
-│   ├── lib/           # API client, auth utils, constants
-│   ├── hooks/         # Custom React hooks
-│   ├── types/         # TypeScript type definitions
-│   └── middleware.ts  # Route protection middleware
-│
-├── backend/           # FastAPI application
-│   ├── app/
-│   │   ├── api/       # Route handlers and dependencies
-│   │   ├── core/      # Config, security, database setup
-│   │   ├── models/    # SQLAlchemy ORM models
-│   │   ├── schemas/   # Pydantic request/response schemas
-│   │   ├── services/  # Business logic layer
-│   │   └── utils/     # Helper utilities
-│   └── main.py        # Application entry point
-│
-├── database/
-│   ├── migrations/    # Alembic migration scripts
-│   └── seed/          # Database seed scripts
-│
-└── docs/              # Project documentation
-```
+### 👨‍🎓 Student Management
+- Full CRUD operations
+- Role-based permissions
+- Student profile linking with user accounts
 
-## Getting Started
+### 👨‍🏫 Teacher Management
+- CRUD operations
+- Subject & department assignment
+- Role-restricted access
 
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 20+ (for local frontend dev)
-- Python 3.12+ (for local backend dev)
+### 🏫 Class Management
+- Class creation and enrollment support
+- Teacher-class assignment structure
 
-### Quick Start with Docker
+### 📅 Attendance System
+- Mark attendance (Present / Absent / Late)
+- Duplicate prevention per student per day
+- Role-based access control
+
+### 📊 Grading System
+- Custom grading scale (A+ to F)
+- Automatic grade calculation
+- GPA-ready structure
+
+---
+
+## 🧠 Tech Stack
+
+- FastAPI
+- PostgreSQL
+- SQLAlchemy
+- Pydantic
+- JWT (Auth)
+- Passlib (Security)
+
+---
+
+## 🏗️ Architecture
+
+- REST API design
+- Modular folder structure
+- Service-oriented backend design
+- Role-based access control (RBAC)
+
+---
+
+## ⚙️ Setup Instructions
+
 ```bash
-# 1. Clone the repository
-git clone <repo-url>
-cd school-management-system
+# 1. Clone repo
+git clone <your-repo-url>
 
-# 2. Set up environment variables
-cp .env.example .env
-# Edit .env with your values
+# 2. Go to backend
+cd backend
 
-# 3. Start all services
-docker-compose up --build
-```
+# 3. Create virtual environment
+python -m venv venv
 
-### Services
-| Service  | URL                        |
-|----------|----------------------------|
-| Frontend | http://localhost:3000      |
-| Backend  | http://localhost:8000      |
-| API Docs | http://localhost:8000/docs |
+# 4. Activate venv
+venv\Scripts\activate
 
-## User Roles
-- **Admin** — Full system access: manage users, classes, reports
-- **Teacher** — Manage assigned classes, record attendance and grades
-- **Student** — View own grades, attendance, and announcements
+# 5. Install dependencies
+pip install -r requirements.txt
 
-## Documentation
-- [API Reference](./docs/api.md)
-- [Database Schema](./docs/database.md)
-- [Architecture Overview](./docs/architecture.md)
+# 6. Run server
+uvicorn main:app --reload
