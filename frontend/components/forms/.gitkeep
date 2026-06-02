@@ -1,4 +1,0 @@
-// forms/
-// This directory will contain reusable form components used across the application.
-// Examples: LoginForm, RegisterForm, StudentForm, TeacherForm, GradeEntryForm, AttendanceForm.
-// Each form component will use React Hook Form for state management and Zod for validation.
