@@ -1,15 +1,31 @@
-// Root Layout
-// This is the top-level layout wrapping the entire Next.js application.
-// It will set up global providers (AuthProvider, ThemeProvider, QueryClientProvider),
-// import global CSS/Tailwind styles, define metadata (title, description, favicon),
-// and render the persistent shell (navbar, sidebar) around page content.
-
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+// ─── Fonts ────────────────────────────────────────────────────────────────────
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "School Management System",
-  description: "A comprehensive platform for managing school operations.",
+  title: {
+    default: "School Management System",
+    template: "%s | School Management System",
+  },
+  description:
+    "A comprehensive platform for managing students, teachers, classes, attendance, and grades.",
 };
+
+// ─── Root layout ──────────────────────────────────────────────────────────────
 
 export default function RootLayout({
   children,
@@ -17,8 +33,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body
+        style={{ backgroundColor: "#0a0a0f" }}
+        className="min-h-screen antialiased"
+      >
+        {children}
+      </body>
     </html>
   );
 }
