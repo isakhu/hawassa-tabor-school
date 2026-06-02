@@ -103,20 +103,23 @@ export default function StudentDashboardPage() {
             ? [0,1,2,3].map((i) => <SkeletonRow key={i} />)
             : grades.length === 0
               ? <p style={{ color: "#6b6b80", fontSize: 14 }}>No grades recorded yet.</p>
-              : grades.slice(0, 6).map((g) => (
-                  <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(99,102,241,0.07)" }}>
-                    <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8f0" }}>{g.assessment_type}</p>
-                      <p style={{ fontSize: 11, color: "#6b6b80" }}>Term: {g.term}</p>
+              : <>
+                  {grades.slice(0, 6).map((g) => (
+                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(99,102,241,0.07)" }}>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8f0" }}>{g.assessment_type}</p>
+                        <p style={{ fontSize: 11, color: "#6b6b80" }}>Term: {g.term}</p>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, background: `${letterColor(g.grade_letter)}22`, color: letterColor(g.grade_letter), fontSize: 13, fontWeight: 700, fontFamily: "var(--font-syne)" }}>
+                          {g.grade_letter}
+                        </span>
+                        <p style={{ fontSize: 11, color: "#6b6b80", marginTop: 2 }}>{g.percentage ?? g.score}%</p>
+                      </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, background: `${letterColor(g.grade_letter)}22`, color: letterColor(g.grade_letter), fontSize: 13, fontWeight: 700, fontFamily: "var(--font-syne)" }}>
-                        {g.grade_letter}
-                      </span>
-                      <p style={{ fontSize: 11, color: "#6b6b80", marginTop: 2 }}>{g.percentage ?? g.score}%</p>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                  <a href="/grades" style={{ display: "block", marginTop: 12, fontSize: 13, color: "#818cf8", textDecoration: "none", fontWeight: 600 }}>View all grades →</a>
+                </>
           }
         </SummaryCard>
 
