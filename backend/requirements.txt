@@ -1,0 +1,26 @@
+# ── FastAPI core ──────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# ── Data validation ───────────────────────────────────────────────────────
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# ── Form / file uploads ───────────────────────────────────────────────────
+python-multipart==0.0.9
+
+# ── PostgreSQL (async) ────────────────────────────────────────────────────
+asyncpg==0.29.0
+sqlalchemy==2.0.30
+
+# ── Auth ──────────────────────────────────────────────────────────────────
+# bcrypt MUST be pinned to 4.x — passlib 1.7.4 is incompatible with bcrypt 5.x
+passlib[bcrypt]==1.7.4
+bcrypt==4.3.0
+python-jose[cryptography]==3.3.0
+
+# ── Environment variables ─────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── Email validation (required by pydantic EmailStr) ─────────────────────
+email-validator==2.1.1
