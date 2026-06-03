@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
+import PageTransition from "@/components/PageTransition";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -44,8 +45,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className="min-h-screen antialiased" style={{ backgroundColor: "#08080f" }}>
-        {children}
+      <body className="min-h-screen antialiased" style={{ backgroundColor: "var(--bg-dark)" }}>
+        <PageTransition>{children}</PageTransition>
       </body>
     </html>
   );

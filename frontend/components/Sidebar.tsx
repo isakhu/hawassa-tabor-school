@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/auth";
@@ -44,6 +44,17 @@ export default function Sidebar({ user }: { user: AuthUser }) {
   const [open, setOpen] = useState(false);
   const [avatarHover, setAvatarHover] = useState(false);
 
+  useEffect(() => {
+    const toggle = () => setOpen((v) => !v);
+    const close = () => setOpen(false);
+    window.addEventListener("educore-toggle-sidebar", toggle);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("educore-toggle-sidebar", toggle);
+      window.removeEventListener("resize", close);
+    };
+  }, []);
+
   const basePath =
     user.role === ROLES.ADMIN   ? "/dashboard/admin"
     : user.role === ROLES.TEACHER ? "/dashboard/teacher"
@@ -59,16 +70,16 @@ export default function Sidebar({ user }: { user: AuthUser }) {
   const sidebarContent = (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Logo */}
-      <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
+      <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="logo-animated">
             <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
               <defs>
                 <linearGradient id="sbLogo" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#6366f1" /><stop offset="50%" stopColor="#8b5cf6" /><stop offset="100%" stopColor="#ec4899" />
+                  <stop offset="0%" stopColor="#D4AF37" /><stop offset="50%" stopColor="#FFE566" /><stop offset="100%" stopColor="#A67C00" />
                 </linearGradient>
               </defs>
-              <path d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z" fill="url(#sbLogo)" opacity="0.15" />
+              <path d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z" fill="url(#sbLogo)" opacity="0.12" />
               <path d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z" stroke="url(#sbLogo)" strokeWidth="2" fill="none" />
               <path d="M17 24L22 29L31 19" stroke="url(#sbLogo)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -81,7 +92,7 @@ export default function Sidebar({ user }: { user: AuthUser }) {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "#6b6b80", textTransform: "uppercase", padding: "0 10px", marginBottom: 8 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", color: "var(--text-muted)", textTransform: "uppercase", padding: "0 10px", marginBottom: 8 }}>
           Main Menu
         </p>
         {navItems.map((item, idx) => {
@@ -91,29 +102,29 @@ export default function Sidebar({ user }: { user: AuthUser }) {
               key={item.label}
               href={item.href}
               onClick={() => setOpen(false)}
-              style={{
+                style={{
                 display: "flex", alignItems: "center", gap: 12,
                 padding: "10px 12px", borderRadius: 10, marginBottom: 2,
                 textDecoration: "none", position: "relative",
                 background: active
-                  ? "linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.1))"
+                  ? "linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))"
                   : "transparent",
-                color: active ? "#e8e8f0" : "#9898b0",
+                color: active ? "var(--text)" : "var(--text-muted)",
                 fontFamily: "var(--font-dm-sans)", fontSize: 14,
                 fontWeight: active ? 600 : 400,
                 transition: "background 0.2s ease, color 0.2s ease",
                 animation: "itemIn 0.35s ease-out both",
                 animationDelay: `${idx * 45}ms`,
               }}
-              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.08)"; }}
+              onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "rgba(212,175,55,0.04)"; }}
               onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
             >
               {/* Active left accent bar */}
               <div style={{
                 position: "absolute", left: 0, top: "20%", bottom: "20%",
-                width: 3, borderRadius: 2,
-                background: active ? "linear-gradient(180deg,#6366f1,#ec4899)" : "transparent",
-                ...(active ? { boxShadow: "0 0 10px #6366f1" } : {}),
+                width: 4, borderRadius: 2,
+                background: active ? "linear-gradient(180deg,#D4AF37,#FFE566)" : "transparent",
+                ...(active ? { boxShadow: "0 0 18px rgba(212,175,55,0.22)" } : {}),
               }} />
               <span style={{ color: active ? "#a78bfa" : "#6b6b80", transition: "color 0.2s ease", marginLeft: 2 }}>
                 <item.icon />
@@ -129,8 +140,8 @@ export default function Sidebar({ user }: { user: AuthUser }) {
         <a
           href="https://github.com/isakhu/school-managment-system/actions"
           target="_blank" rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, textDecoration: "none", color: "#6b6b80", fontSize: 13, marginBottom: 2, transition: "background 0.2s" }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.08)")}
+          style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, textDecoration: "none", color: "var(--text-muted)", fontSize: 13, marginBottom: 2, transition: "background 0.2s" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(212,175,55,0.04)")}
           onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}
         >
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981", flexShrink: 0 }} />

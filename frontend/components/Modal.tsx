@@ -13,6 +13,7 @@ interface ModalProps {
 export default function Modal({ open, onClose, title, children, maxWidth = 480 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [closing, setClosing] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   function handleClose() {
     setClosing(true);
@@ -50,6 +51,13 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 640);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   if (!open && !closing) return null;
 
   return (
@@ -69,13 +77,16 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
         role="dialog"
         aria-modal="true"
         style={{
-          width: "100%", maxWidth,
-          background: "rgba(19,19,26,0.97)",
-          backdropFilter: "blur(24px)",
-          border: "1px solid rgba(99,102,241,0.28)",
-          borderRadius: 20,
-          boxShadow: "0 24px 64px rgba(0,0,0,0.55), 0 0 48px rgba(99,102,241,0.12)",
-          overflow: "hidden",
+          width: "100%",
+          maxWidth: isMobile ? "100%" : maxWidth,
+          background: "var(--bg-card)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid rgba(212,175,55,0.12)",
+          borderRadius: isMobile ? 10 : 20,
+          boxShadow: isMobile ? "0 12px 36px rgba(0,0,0,0.6)" : "0 24px 64px rgba(0,0,0,0.55), 0 0 48px rgba(212,175,55,0.06)",
+          maxHeight: "calc(100vh - 40px)",
+          overflowY: "auto",
+          overflowX: "hidden",
           animation: closing
             ? "modalOut 0.18s ease-in forwards"
             : "modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards",

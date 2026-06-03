@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { get } from "@/lib/api";
 
 // ─── Count-up hook ────────────────────────────────────────────────────────────
@@ -34,11 +35,14 @@ function SkeletonCard() {
 }
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, gradient, iconBg }: { label: string; value: number; icon: React.ReactNode; gradient: string; iconBg: string }) {
+function StatCard({ label, value, icon, gradient, iconBg, index = 0 }: { label: string; value: number; icon: React.ReactNode; gradient: string; iconBg: string; index?: number }) {
   const displayed = useCountUp(value);
   return (
-    <div
+    <motion.div
       className="stat-card"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.45 }}
       style={{ padding: 24, background: "rgba(19,19,26,0.8)", borderRadius: 16, border: "1px solid rgba(99,102,241,0.12)", position: "relative", overflow: "hidden" }}
     >
       {/* Gradient glow bg */}
@@ -118,7 +122,7 @@ export default function AdminDashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 32 }}>
         {loading
           ? [0,1,2,3].map((i) => <SkeletonCard key={i} />)
-          : stats.map((s) => <StatCard key={s.label} {...s} />)
+          : stats.map((s, i) => <StatCard key={s.label} index={i} {...s} />)
         }
       </div>
 
