@@ -28,6 +28,8 @@
   --text-muted:     var(--text-muted);
   --font-heading:   var(--font-syne, ui-sans-serif, system-ui, sans-serif);
   --font-body:      var(--font-dm-sans, ui-sans-serif, system-ui, sans-serif);
+  /* Sidebar width (used by TopBar and layout) */
+  --sidebar-width: 260px;
 }
 
 /* ─── Reset ─────────────────────────────────────────────────────────────── */
@@ -460,6 +462,7 @@ html, body {
   .stat-grid { grid-template-columns: 1fr !important; }
   .grid-responsive { grid-template-columns: repeat(1, minmax(0,1fr)) !important; }
   .desktop-only { display: none !important; }
+  :root { --sidebar-width: 0px; }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {

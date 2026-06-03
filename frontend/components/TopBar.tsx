@@ -16,7 +16,7 @@ export default function TopBar({ title, user }: { title: string; user: AuthUser 
       style={{
         position: "fixed",
         top: 0,
-        left: 260,
+        left: "var(--sidebar-width)",
         right: 0,
         height: 64,
         zIndex: 100,
