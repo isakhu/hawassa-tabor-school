@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { motion } from "framer-motion";
+import StatCard from "@/components/StatCard";
 import { get } from "@/lib/api";
 
 // ─── Count-up hook ────────────────────────────────────────────────────────────
@@ -34,31 +34,7 @@ function SkeletonCard() {
   );
 }
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, gradient, iconBg, index = 0 }: { label: string; value: number; icon: React.ReactNode; gradient: string; iconBg: string; index?: number }) {
-  const displayed = useCountUp(value);
-  return (
-    <motion.div
-      className="stat-card"
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, duration: 0.45 }}
-      style={{ padding: 24, background: "rgba(19,19,26,0.8)", borderRadius: 16, border: "1px solid rgba(99,102,241,0.12)", position: "relative", overflow: "hidden" }}
-    >
-      {/* Gradient glow bg */}
-      <div style={{ position: "absolute", inset: 0, background: gradient, opacity: 0.04, borderRadius: 16 }} />
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 12, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-          {icon}
-        </div>
-        <p style={{ fontSize: 13, color: "#6b6b80", marginBottom: 6, fontFamily: "var(--font-dm-sans)" }}>{label}</p>
-        <p className="count-up" style={{ fontSize: 34, fontWeight: 800, fontFamily: "var(--font-syne)", color: "#e8e8f0" }}>
-          {displayed.toLocaleString()}
-        </p>
-      </div>
-    </div>
-  );
-}
+// StatCard is now a separate client component using framer-motion (see components/StatCard.tsx)
 
 // ─── Recent activity skeleton ─────────────────────────────────────────────────
 function ActivitySkeleton() {
