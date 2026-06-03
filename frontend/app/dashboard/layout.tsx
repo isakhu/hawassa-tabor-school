@@ -22,11 +22,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
 
+  // If there's no token in localStorage, immediately navigate to login
+  // to avoid rendering a persistent Loading screen while the auth check runs.
+  if (typeof window !== "undefined" && !isAuthenticated()) {
+    router.replace("/login");
+    return null;
+  }
+
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.replace("/login");
-      return;
-    }
     const u = getUser();
     if (!u) {
       router.replace("/login");
