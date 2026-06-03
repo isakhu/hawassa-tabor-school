@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE_URL } from "@/lib/constants";
@@ -103,9 +103,7 @@ export default function LoginPage() {
   return (
     <>
       <MeshBackground />
-      <Suspense fallback={<div>Loading...</div>}>
-        <LoginContent />
-      </Suspense>
+      <LoginContent />
     </>
   );
 }
