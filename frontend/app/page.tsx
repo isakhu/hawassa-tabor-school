@@ -4,6 +4,9 @@
 // a call-to-action button to navigate to login or register,
 // and links to key features. Unauthenticated users land here first.
 
+import { redirect } from "next/navigation";
+
 export default function HomePage() {
-  return null;
+  // Redirect root to the login page to avoid a blank landing page
+  redirect("/login");
 }
