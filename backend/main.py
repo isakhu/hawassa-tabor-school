@@ -71,7 +71,7 @@ app.include_router(teachers_router, prefix="/api/v1")
 app.include_router(classes_router, prefix="/api/v1")
 app.include_router(attendance_router, prefix="/api/v1")
 app.include_router(grades_router, prefix="/api/v1")
-
+app.include_router(dashboard_router, prefix="/api/v1")
 # ---------------------------------------------------------------------------
 # Root endpoints
 # ---------------------------------------------------------------------------
