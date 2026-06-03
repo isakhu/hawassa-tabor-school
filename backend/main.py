@@ -21,8 +21,8 @@ from app.api.routes.students import router as students_router
 from app.api.routes.teachers import router as teachers_router
 from app.api.routes.classes import router as classes_router
 from app.api.routes.attendance import router as attendance_router
-from app.api.routes.grades import router as grades_router
-
+from app.api.routes.grades import router as grades_router                                                  
+from app.api.routes.dashboard import router as dashboard_router
 # ---------------------------------------------------------------------------
 # Lifespan  (startup / shutdown)
 # ---------------------------------------------------------------------------
