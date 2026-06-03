@@ -96,7 +96,7 @@ export default function StudentDashboardPage() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="max-lg:grid-cols-1">
+      <div className="grid grid-responsive">
         {/* Grades */}
         <SummaryCard title="My Grades" color="#6366f1">
           {loading

@@ -103,7 +103,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Recent activity */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="max-lg:grid-cols-1">
+      <div className="grid grid-responsive">
         {/* Activity feed */}
         <div className="glass-card" style={{ padding: 24 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>

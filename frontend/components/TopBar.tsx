@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import type { AuthUser } from "@/lib/auth";
 
 function getInitials(name: string) {
@@ -10,6 +11,13 @@ function getInitials(name: string) {
 export default function TopBar({ title, user }: { title: string; user: AuthUser }) {
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => setSidebarOpen(Boolean(e?.detail?.open));
+    window.addEventListener("educore-sidebar-state", handler as EventListener);
+    return () => window.removeEventListener("educore-sidebar-state", handler as EventListener);
+  }, []);
 
   return (
     <header
@@ -31,14 +39,25 @@ export default function TopBar({ title, user }: { title: string; user: AuthUser 
       }}
       className="max-lg:left-0"
     >
-      {/* Mobile menu toggle */}
+      {/* Mobile menu toggle (animated) */}
       <button
-        onClick={() => window.dispatchEvent(new CustomEvent('educore-toggle-sidebar'))}
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("educore-toggle-sidebar"));
+          setSidebarOpen((v) => !v); // optimistic toggle
+        }}
         className="lg:hidden"
         style={{ position: 'absolute', left: 12, top: 12, width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(212,175,55,0.06)', color: 'var(--text)', cursor: 'pointer' }}
         aria-label="Open menu"
+        aria-pressed={sidebarOpen}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+        <motion.span initial={false} animate={sidebarOpen ? "open" : "closed"} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <motion.span variants={{ closed: { opacity: 1, rotate: 0 }, open: { opacity: 0, rotate: -90 } }} style={{ display: 'inline-flex' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+          </motion.span>
+          <motion.span variants={{ closed: { opacity: 0, rotate: 90 }, open: { opacity: 1, rotate: 0 } }} style={{ display: 'inline-flex', position: 'absolute' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </motion.span>
+        </motion.span>
       </button>
       {/* Page title */}
       <h1

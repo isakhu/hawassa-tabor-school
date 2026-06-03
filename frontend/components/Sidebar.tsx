@@ -55,6 +55,15 @@ export default function Sidebar({ user }: { user: AuthUser }) {
     };
   }, []);
 
+  // Broadcast sidebar state so other components can sync (e.g., TopBar icon)
+  useEffect(() => {
+    try {
+      window.dispatchEvent(new CustomEvent("educore-sidebar-state", { detail: { open } }));
+    } catch (e) {
+      // ignore during SSR or restricted environments
+    }
+  }, [open]);
+
   const basePath =
     user.role === ROLES.ADMIN   ? "/dashboard/admin"
     : user.role === ROLES.TEACHER ? "/dashboard/teacher"
@@ -213,33 +222,53 @@ export default function Sidebar({ user }: { user: AuthUser }) {
         {open ? <Icons.X /> : <Icons.Menu />}
       </button>
 
-      {/* Overlay */}
-      {open && (
-        <div
-          className="lg:hidden"
-          onClick={() => setOpen(false)}
-          style={{ position: "fixed", inset: 0, zIndex: 149, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", animation: "pageIn 0.2s ease forwards" }}
-        />
-      )}
+      {/* Overlay + animated sidebar for mobile */}
+      <>
+        {open && (
+          <>
+            <div
+              className="lg:hidden"
+              onClick={() => setOpen(false)}
+              style={{ position: "fixed", inset: 0, zIndex: 149, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", animation: "pageIn 0.18s ease forwards" }}
+            />
 
-      {/* Sidebar panel */}
-      <aside
-        style={{
-          position: "fixed", top: 0, left: 0, width: 260, height: "100vh",
-          background: "rgba(11,11,18,0.97)",
-          backdropFilter: "blur(24px)",
-          zIndex: 150,
-          display: "flex",
-          transition: "transform 0.32s cubic-bezier(0.32,0.72,0,1)",
-        }}
-        className={!open ? "max-lg:translate-x-[-260px]" : ""}
-      >
-        {/* Animated right border */}
-        <div style={{ position: "absolute", top: 0, right: 0, width: 1, height: "100%", overflow: "hidden" }}>
-          <div className="sidebar-border" style={{ width: "100%", height: "100%" }} />
-        </div>
-        <div style={{ flex: 1, overflow: "hidden" }}>{sidebarContent}</div>
-      </aside>
+            <div
+              className="lg:hidden"
+              style={{
+                position: "fixed", top: 0, left: 0, width: 260, height: "100vh",
+                background: "rgba(11,11,18,0.97)",
+                backdropFilter: "blur(24px)",
+                zIndex: 150,
+                display: "flex",
+                transform: open ? "translateX(0)" : "translateX(-280px)",
+                transition: "transform 0.32s cubic-bezier(0.32,0.72,0,1)",
+              }}
+            >
+              <div style={{ position: "absolute", top: 0, right: 0, width: 1, height: "100%", overflow: "hidden" }}>
+                <div className="sidebar-border" style={{ width: "100%", height: "100%" }} />
+              </div>
+              <div style={{ flex: 1, overflow: "hidden" }}>{sidebarContent}</div>
+            </div>
+          </>
+        )}
+
+        {/* Desktop persistent sidebar */}
+        <aside
+          style={{
+            position: "fixed", top: 0, left: 0, width: 260, height: "100vh",
+            background: "rgba(11,11,18,0.97)",
+            backdropFilter: "blur(24px)",
+            zIndex: 150,
+            display: "flex",
+          }}
+          className="hidden lg:flex"
+        >
+          <div style={{ position: "absolute", top: 0, right: 0, width: 1, height: "100%", overflow: "hidden" }}>
+            <div className="sidebar-border" style={{ width: "100%", height: "100%" }} />
+          </div>
+          <div style={{ flex: 1, overflow: "hidden" }}>{sidebarContent}</div>
+        </aside>
+      </>
 
       {/* Mobile bottom navigation bar */}
       <nav className="bottom-nav lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
