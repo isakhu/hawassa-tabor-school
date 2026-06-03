@@ -20,7 +20,10 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    # Include common local dev ports and the deployed frontend host so
+    # the API responds with CORS headers during development.
+    # In production override this via the ALLOWED_ORIGINS environment variable.
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app"
 
     # ── App ───────────────────────────────────────────────────────────────
     ENVIRONMENT: str = "development"
