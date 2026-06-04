@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense, useRef } from "react";
+import { useEffect, useState, Suspense, useRef, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE_URL } from "@/lib/constants";
 import { saveToken, saveUser, dashboardForRole } from "@/lib/auth";
@@ -12,7 +12,6 @@ export default function LoginPage() {
       backgroundImage: 'linear-gradient(rgba(10, 10, 10, 0.88), rgba(10, 10, 10, 0.88)), url("https://images.unsplash.com/photo-1541339907198-e08756ebafe3?q=80&w=2070&auto=format&fit=crop")',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
       minHeight: "100vh", 
       display: "flex", 
       padding: "20px",
@@ -95,6 +94,12 @@ function LoginContent() {
   const [error, setError]       = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Safety: Ensure we only run client-side logic after mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // Pre-warm backend
@@ -122,6 +127,9 @@ function LoginContent() {
     window.addEventListener("click", handleFirstInteraction);
     return () => window.removeEventListener("click", handleFirstInteraction);
   }, [isPlaying]);
+
+  // If not mounted yet, don't render the interactive parts to avoid hydration errors
+  if (!mounted) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
