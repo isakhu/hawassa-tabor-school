@@ -29,8 +29,8 @@ class Settings(BaseSettings):
     # These are the ONLY credentials that work on first launch.
     # Change these values to your desired admin username/password.
     # After first login, admin can create all other users inside the app.
-    ADMIN_EMAIL: str = "admin@educore.com"
-    ADMIN_PASSWORD: str = "Admin@1234"
+    ADMIN_EMAIL: str = "yzak"
+    ADMIN_PASSWORD: str = "0800"
     ADMIN_FULL_NAME: str = "Super Admin"
 
     model_config = SettingsConfigDict(

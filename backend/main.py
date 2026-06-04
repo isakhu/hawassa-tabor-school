@@ -46,7 +46,11 @@ async def seed_admin():
         existing_admin = result.scalar_one_or_none()
 
         if existing_admin:
-            print(f"✅ Admin already exists: {settings.ADMIN_EMAIL}")
+            # Update admin to match current config (allows password/name changes)
+            existing_admin.full_name = settings.ADMIN_FULL_NAME
+            existing_admin.password_hash = hash_password(settings.ADMIN_PASSWORD)
+            await session.commit()
+            print(f"✅ Admin credentials synced: {settings.ADMIN_EMAIL}")
             return
 
         # Create the admin

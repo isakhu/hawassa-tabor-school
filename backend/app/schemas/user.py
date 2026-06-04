@@ -7,7 +7,7 @@ Password is NEVER included in response schemas.
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.user import Role
 
@@ -18,7 +18,7 @@ from app.models.user import Role
 
 class UserBase(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=255, examples=["Jane Doe"])
-    email: EmailStr = Field(..., examples=["jane@school.edu"])
+    email: str = Field(..., examples=["admin", "jane@school.edu"])
     role: Role = Field(..., examples=[Role.STUDENT])
 
 
@@ -28,23 +28,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """Used for POST /auth/register — includes plain-text password."""
-    password: str = Field(..., min_length=8, max_length=128, examples=["Str0ngPass!"])
-
-    @field_validator("password")
-    @classmethod
-    def password_strength(cls, v: str) -> str:
-        """Enforce at least one digit and one letter."""
-        has_letter = any(c.isalpha() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        if not (has_letter and has_digit):
-            raise ValueError("Password must contain at least one letter and one digit.")
-        return v
+    password: str = Field(..., min_length=1, max_length=128, examples=["123"])
 
 
 class UserLogin(BaseModel):
     """Used for POST /auth/login."""
-    email: EmailStr = Field(..., examples=["jane@school.edu"])
-    password: str = Field(..., examples=["Str0ngPass!"])
+    email: str = Field(..., examples=["admin"])
+    password: str = Field(..., examples=["123"])
 
 
 # ---------------------------------------------------------------------------
