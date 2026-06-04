@@ -7,7 +7,7 @@ import { saveToken, saveUser, dashboardForRole } from "@/lib/auth";
 
 export default function LoginPage() {
   return (
-    <div style={{ backgroundColor: "#fafafa", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
+    <div style={{ backgroundColor: "#0a0a0a", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <Suspense fallback={<div>Loading...</div>}>
         <LoginContent />
       </Suspense>
@@ -63,35 +63,48 @@ function LoginContent() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    padding: "9px 0 7px 8px",
-    background: "#fafafa",
-    border: "1px solid #dbdbdb",
-    borderRadius: "3px",
-    fontSize: "12px",
-    marginBottom: "6px",
+    padding: "12px 14px",
+    background: "#1a1a1a",
+    border: "1px solid #333",
+    borderRadius: "6px",
+    fontSize: "14px",
+    marginBottom: "10px",
     outline: "none",
-    color: "#262626"
+    color: "#fff"
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "350px" }}>
-      <div style={{ backgroundColor: "#fff", border: "1px solid #dbdbdb", padding: "10px 40px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+      <div style={{ backgroundColor: "#111", border: "1px solid #D4AF37", padding: "40px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
         
-        <h1 style={{ margin: "36px 0 12px", fontSize: "28px", fontWeight: "600", color: "#262626", letterSpacing: "-1px" }}>
-          yzak school ms
+        <h1 style={{ 
+          margin: "0 0 8px", 
+          fontSize: "32px", 
+          fontWeight: "800", 
+          color: "#D4AF37", 
+          letterSpacing: "2px", 
+          textTransform: "uppercase", 
+          textAlign: "center",
+          textShadow: "0 0 12px rgba(212, 175, 55, 0.4), 0 0 24px rgba(212, 175, 55, 0.2)"
+        }}>
+          tabor
         </h1>
 
-        <form onSubmit={handleSubmit} style={{ width: "100%", marginTop: "24px" }}>
+        <div style={{ color: "#888", fontSize: "11px", marginBottom: "32px", textAlign: "center", textTransform: "uppercase", letterSpacing: "1px", borderTop: "1px solid #333", borderBottom: "1px solid #333", padding: "8px 0", width: "100%" }}>
+          Grades 9-12 • 1500 Students • 70 Teachers
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ width: "100%" }}>
           <input 
             type="text" 
-            placeholder="Phone number, username, or email" 
+            placeholder="Username or Email" 
             value={email} 
             onChange={(e) => setEmail(e.target.value)} 
             style={inputStyle} 
           />
           <input 
             type="password" 
-            placeholder="Password" 
+            placeholder="Password"
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             style={inputStyle} 
@@ -100,7 +113,7 @@ function LoginContent() {
           <button 
             type="submit" 
             disabled={isInvalid || loading} 
-            style={{ width: "100%", backgroundColor: isInvalid ? "rgba(0,149,246,.3)" : "#0095f6", border: "none", borderRadius: "8px", color: "white", padding: "7px 16px", fontWeight: "600", fontSize: "14px", marginTop: "8px", cursor: isInvalid ? "default" : "pointer" }}
+            style={{ width: "100%", backgroundColor: isInvalid ? "rgba(212, 175, 55, 0.3)" : "#D4AF37", border: "none", borderRadius: "6px", color: isInvalid ? "rgba(0,0,0,0.5)" : "#000", padding: "12px", fontWeight: "700", fontSize: "14px", marginTop: "10px", cursor: isInvalid ? "default" : "pointer", transition: "all 0.2s" }}
           >
             {loading ? "Logging in..." : "Log In"}
           </button>
@@ -113,18 +126,18 @@ function LoginContent() {
         )}
 
         <div style={{ margin: "20px 0", display: "flex", alignItems: "center", width: "100%" }}>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#dbdbdb" }} />
-          <div style={{ margin: "0 18px", color: "#8e8e8e", fontSize: "13px", fontWeight: "600" }}>OR</div>
-          <div style={{ flex: 1, height: "1px", backgroundColor: "#dbdbdb" }} />
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#333" }} />
+          <div style={{ margin: "0 18px", color: "#666", fontSize: "12px", fontWeight: "600" }}>OR</div>
+          <div style={{ flex: 1, height: "1px", backgroundColor: "#333" }} />
         </div>
 
-        <p style={{ color: "#385185", fontSize: "14px", fontWeight: "600", cursor: "pointer", marginBottom: "12px" }}>
+        <p style={{ color: "#D4AF37", fontSize: "13px", fontWeight: "600", cursor: "pointer", marginBottom: "0", opacity: 0.8 }}>
           Forgot password?
         </p>
       </div>
 
-      <div style={{ backgroundColor: "#fff", border: "1px solid #dbdbdb", padding: "20px", marginTop: "10px", textAlign: "center" }}>
-        <p style={{ fontSize: "14px", color: "#262626" }}>
+      <div style={{ backgroundColor: "#111", border: "1px solid #333", padding: "20px", marginTop: "12px", borderRadius: "8px", textAlign: "center" }}>
+        <p style={{ fontSize: "14px", color: "#888" }}>
           Don't have an account? <span style={{ color: "#0095f6", fontWeight: "600", cursor: "pointer" }}>Contact Admin</span>
         </p>
       </div>

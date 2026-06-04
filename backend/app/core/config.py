@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # After first login, admin can create all other users inside the app.
     ADMIN_EMAIL: str = "yzak"
     ADMIN_PASSWORD: str = "0800"
-    ADMIN_FULL_NAME: str = "Super Admin"
+    ADMIN_FULL_NAME: str = "Tabor Admin"
 
     model_config = SettingsConfigDict(
         env_file=".env",
