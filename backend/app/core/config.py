@@ -25,7 +25,8 @@ class Settings(BaseSettings):
         "http://localhost:3001,"
         "https://school-managment-system-flax.vercel.app,"
         "https://school-managment-system5.vercel.app,"
-        "https://school-managment-system-git-main-yishak-tule-s-projects.vercel.app"
+        "https://school-managment-system-git-main-yishak-tule-s-projects.vercel.app,"
+        "https://hawassa-tabor.vercel.app"
     )
 
     # ── App ───────────────────────────────────────────────────────────────
