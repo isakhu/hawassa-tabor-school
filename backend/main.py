@@ -36,7 +36,7 @@ async def seed_admin():
     from sqlalchemy import select
     from app.core.database import AsyncSessionLocal
     from app.core.security import get_password_hash
-    from app.models.user import User, UserRole
+    from app.models.user import User, Role
 
     async with AsyncSessionLocal() as session:
         # Check if admin already exists
@@ -54,7 +54,7 @@ async def seed_admin():
             full_name=settings.ADMIN_FULL_NAME,
             email=settings.ADMIN_EMAIL,
             hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
-            role=UserRole.admin,
+            role=Role.ADMIN,
             is_active=True,
         )
         session.add(admin)
