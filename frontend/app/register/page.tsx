@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { API_BASE_URL } from "@/lib/constants";
+import { useEffect, useState } from "react";
 
-// ─── Re-use mesh background from login ───────────────────────────────────────
+// ─── Mesh background ──────────────────────────────────────────────────────────
 function MeshBackground() {
   return (
     <div
@@ -93,83 +91,10 @@ function LogoMark({ size = 40 }: { size?: number }) {
   );
 }
 
-function Spinner() {
-  return (
-    <span
-      className="animate-spin-slow"
-      style={{
-        display: "inline-block",
-        width: 18,
-        height: 18,
-        border: "2px solid rgba(255,255,255,0.3)",
-        borderTopColor: "#fff",
-        borderRadius: "50%",
-      }}
-    />
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
-  const router = useRouter();
-
-  const [fullName, setFullName]   = useState("");
-  const [email, setEmail]         = useState("");
-  const [password, setPassword]   = useState("");
-  const [role, setRole]           = useState("STUDENT");
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const [mounted, setMounted]     = useState(false);
-
+  const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ full_name: fullName, email, password, role }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(
-          typeof data?.detail === "string" ? data.detail : "Registration failed."
-        );
-      }
-
-      router.push("/login?registered=true");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "13px 16px",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(99,102,241,0.25)",
-    borderRadius: 12,
-    color: "#e8e8f0",
-    fontSize: 15,
-    fontFamily: "var(--font-dm-sans)",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 13,
-    color: "#9898b0",
-    marginBottom: 6,
-    fontWeight: 500,
-  };
 
   return (
     <>
@@ -217,164 +142,69 @@ export default function RegisterPage() {
           </div>
 
           {/* Card */}
-          <div className="glass-card" style={{ padding: "36px 32px" }}>
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <h2
-                style={{
-                  fontFamily: "var(--font-syne)",
-                  fontSize: 26,
-                  fontWeight: 700,
-                  marginBottom: 6,
-                }}
-              >
-                <span className="gradient-text">Create account</span>
-              </h2>
-              <p style={{ color: "#6b6b80", fontSize: 14 }}>
-                Join EduCore and get started today
-              </p>
+          <div className="glass-card" style={{ padding: "48px 32px", textAlign: "center" }}>
+
+            {/* Lock icon */}
+            <div style={{ fontSize: 56, marginBottom: 20 }}>🔒</div>
+
+            <h2
+              style={{
+                fontFamily: "var(--font-syne)",
+                fontSize: 26,
+                fontWeight: 700,
+                marginBottom: 12,
+              }}
+            >
+              <span className="gradient-text">Registration Closed</span>
+            </h2>
+
+            <p style={{ color: "#6b6b80", fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
+              Account creation is managed by your school administrator.
+              <br />
+              Please contact your admin to get access to EduCore.
+            </p>
+
+            {/* Info box */}
+            <div
+              style={{
+                padding: "16px 20px",
+                background: "rgba(99,102,241,0.08)",
+                border: "1px solid rgba(99,102,241,0.25)",
+                borderRadius: 12,
+                marginBottom: 32,
+                fontSize: 14,
+                color: "#a5b4fc",
+                lineHeight: 1.6,
+              }}
+            >
+              📧 Ask your admin to create an account for you inside the app.
+              <br />
+              You will receive your login credentials directly.
             </div>
 
-            {/* Error */}
-            {error && (
-              <div
-                style={{
-                  marginBottom: 20,
-                  padding: "12px 16px",
-                  background: "rgba(239,68,68,0.1)",
-                  border: "1px solid rgba(239,68,68,0.35)",
-                  borderRadius: 10,
-                  fontSize: 14,
-                  color: "#fca5a5",
-                  boxShadow: "0 0 16px rgba(239,68,68,0.15)",
-                }}
-              >
-                ⚠️ {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Full name */}
-              <div>
-                <label style={labelStyle}>Full Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Jane Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="input-glow"
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label style={labelStyle}>Email address</label>
-                <input
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="you@school.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input-glow"
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label style={labelStyle}>Password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  placeholder="At least 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-glow"
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Role */}
-              <div>
-                <label style={labelStyle}>Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="input-glow"
-                  style={{
-                    ...inputStyle,
-                    cursor: "pointer",
-                    appearance: "none",
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236366f1' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                    backgroundRepeat: "no-repeat",
-                    backgroundPosition: "right 14px center",
-                    paddingRight: 40,
-                  }}
-                >
-                  <option value="STUDENT" style={{ background: "#13131a" }}>
-                    🎓 Student
-                  </option>
-                  <option value="TEACHER" style={{ background: "#13131a" }}>
-                    📚 Teacher
-                  </option>
-                  <option value="ADMIN" style={{ background: "#13131a" }}>
-                    🛡️ Admin
-                  </option>
-                </select>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="shimmer-btn"
-                style={{
-                  marginTop: 8,
-                  padding: "14px",
-                  border: "none",
-                  borderRadius: 12,
-                  color: "#fff",
-                  fontSize: 15,
-                  fontWeight: 600,
-                  fontFamily: "var(--font-syne)",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.7 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Spinner /> Creating account…
-                  </>
-                ) : (
-                  "Create Account →"
-                )}
-              </button>
-            </form>
-
-            <p style={{ marginTop: 20, textAlign: "center", fontSize: 14, color: "#6b6b80" }}>
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                style={{
-                  background: "linear-gradient(135deg, #6366f1, #ec4899)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-              >
-                Sign in
-              </Link>
-            </p>
+            {/* Back to login */}
+            <Link
+              href="/login"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "13px 32px",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: "#fff",
+                fontFamily: "var(--font-syne)",
+                fontWeight: 600,
+                fontSize: 15,
+                textDecoration: "none",
+                letterSpacing: "0.02em",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              ← Back to Login
+            </Link>
           </div>
         </div>
       </div>

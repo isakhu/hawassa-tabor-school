@@ -20,13 +20,18 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    # Include common local dev ports and the deployed frontend host so
-    # the API responds with CORS headers during development.
-    # In production override this via the ALLOWED_ORIGINS environment variable.
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app"
 
     # ── App ───────────────────────────────────────────────────────────────
     ENVIRONMENT: str = "development"
+
+    # ── Default Admin Credentials (hardcoded) ─────────────────────────────
+    # These are the ONLY credentials that work on first launch.
+    # Change these values to your desired admin username/password.
+    # After first login, admin can create all other users inside the app.
+    ADMIN_EMAIL: str = "admin@educore.com"
+    ADMIN_PASSWORD: str = "Admin@1234"
+    ADMIN_FULL_NAME: str = "Super Admin"
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -38,8 +43,6 @@ class Settings(BaseSettings):
     @classmethod
     def secret_key_must_be_set(cls, v: str, info) -> str:
         """Refuse to start in production with the default placeholder key."""
-        # info.data may not have ENVIRONMENT yet during validation order,
-        # so we read it directly from the raw value.
         if v == "changeme":
             import os
             env = os.getenv("ENVIRONMENT", "development")

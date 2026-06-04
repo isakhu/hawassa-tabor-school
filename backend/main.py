@@ -12,8 +12,8 @@ from app.core.config import settings
 from app.core.database import create_all_tables, engine
 
 # Import all models so they are registered on Base.metadata
-# before create_all_tables() is called.  New models must be added here.
-import app.models  # noqa: F401  (side-effect import — registers User, etc.)
+# before create_all_tables() is called.
+import app.models  # noqa: F401
 
 # Routers
 from app.api.routes.auth import router as auth_router
@@ -24,13 +24,55 @@ from app.api.routes.attendance import router as attendance_router
 from app.api.routes.grades import router as grades_router
 
 # ---------------------------------------------------------------------------
-# Lifespan  (startup / shutdown)
+# Admin seeder
+# ---------------------------------------------------------------------------
+
+async def seed_admin():
+    """
+    Creates the default admin account on first launch if it doesn't exist.
+    Credentials come from config.py (ADMIN_EMAIL / ADMIN_PASSWORD).
+    This is the ONLY way to get into the app on first launch.
+    """
+    from sqlalchemy import select
+    from app.core.database import AsyncSessionLocal
+    from app.core.security import get_password_hash
+    from app.models.user import User, UserRole
+
+    async with AsyncSessionLocal() as session:
+        # Check if admin already exists
+        result = await session.execute(
+            select(User).where(User.email == settings.ADMIN_EMAIL)
+        )
+        existing_admin = result.scalar_one_or_none()
+
+        if existing_admin:
+            print(f"✅ Admin already exists: {settings.ADMIN_EMAIL}")
+            return
+
+        # Create the admin
+        admin = User(
+            full_name=settings.ADMIN_FULL_NAME,
+            email=settings.ADMIN_EMAIL,
+            hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+            role=UserRole.admin,
+            is_active=True,
+        )
+        session.add(admin)
+        await session.commit()
+        print(f"🚀 Default admin created: {settings.ADMIN_EMAIL}")
+        print(f"🔑 Password: {settings.ADMIN_PASSWORD}")
+        print("⚠️  Change this password after first login!")
+
+# ---------------------------------------------------------------------------
+# Lifespan (startup / shutdown)
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create database tables for any model registered on Base
+    # 1. Create all DB tables
     await create_all_tables()
+    # 2. Seed default admin if not exists
+    await seed_admin()
     yield
     # Shutdown: dispose connection pool cleanly
     await engine.dispose()
@@ -44,7 +86,6 @@ app = FastAPI(
     description="Backend API for managing students, teachers, classes, grades, and attendance.",
     version="1.0.0",
     lifespan=lifespan,
-    # Disable interactive docs in production — enable only in development
     docs_url="/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/redoc" if settings.ENVIRONMENT != "production" else None,
 )
@@ -90,10 +131,7 @@ def health_check() -> dict:
 
 @app.get("/db-health", tags=["Health"])
 async def db_health_check() -> dict:
-    """
-    Verifies that the database engine is reachable.
-    Runs a lightweight 'SELECT 1' query against PostgreSQL.
-    """
+    """Verifies that the database engine is reachable."""
     from sqlalchemy import text
     from app.core.database import AsyncSessionLocal
 
