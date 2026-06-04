@@ -39,7 +39,7 @@ async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> Us
     return UserResponse.model_validate(current_user)
 
 
-@router.post("/register", resposnse_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Admin only: create a new user account")
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Admin only: create a new user account")
 async def register(payload: UserCreate, db: Annotated[AsyncSession, Depends(get_db)], current_user: Annotated[User, Depends(get_current_user)]) -> UserResponse:
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can create new user accounts.")
