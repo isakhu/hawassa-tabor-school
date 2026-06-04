@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { API_BASE_URL } from "@/lib/constants";
 import { saveToken, saveUser, dashboardForRole } from "@/lib/auth";
@@ -13,11 +13,12 @@ export default function LoginPage() {
       backgroundPosition: 'center',
       minHeight: "100vh", 
       display: "flex", 
+      padding: "20px",
       justifyContent: "center", 
       alignItems: "center", 
       fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
     }}>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div style={{ color: "#D4AF37", fontWeight: 700 }}>Initializing Tabor...</div>}>
         <LoginContent />
       </Suspense>
     </div>
@@ -32,11 +33,45 @@ function LoginContent() {
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted]   = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     // Pre-warm backend
-    fetch(`${API_BASE_URL.replace("/api/v1", "")}/health`).catch(() => {});
+    if (API_BASE_URL && typeof API_BASE_URL === 'string') {
+      fetch(`${API_BASE_URL.replace("/api/v1", "")}/health`).catch(() => {});
+    }
+    
+    const handleResize = () => setIsMobile(window.innerWidth < 480);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    // Only attach the interaction listener if music is not already playing
+    if (isPlaying) return;
+
+    const handleFirstInteraction = () => {
+      if (audioRef.current) {
+        audioRef.current.play()
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(() => {
+             /* Silently wait for the next interaction if needed */
+          });
+      }
+    };
+
+    window.addEventListener("click", handleFirstInteraction);
+    return () => window.removeEventListener("click", handleFirstInteraction);
+  }, [isPlaying]);
+
+  if (!mounted) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +103,18 @@ function LoginContent() {
     }
   }
 
+  const toggleMusic = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(err => console.error("Audio playback failed:", err));
+    }
+  };
+
   const isInvalid = password === "" || email === "";
 
   const inputStyle: React.CSSProperties = {
@@ -83,8 +130,8 @@ function LoginContent() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "350px" }}>
-      <div style={{ backgroundColor: "#111", border: "1px solid #D4AF37", padding: "40px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
+    <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "400px" }}>
+      <div style={{ backgroundColor: "#111", border: "1px solid #D4AF37", padding: isMobile ? "30px 20px" : "40px", borderRadius: "12px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.8)" }}>
         
         <h1 style={{ 
           margin: "0 0 8px", 
@@ -151,19 +198,45 @@ function LoginContent() {
         </p>
       </div>
 
+      {/* Music Toggle */}
+      <button 
+        onClick={toggleMusic}
+        style={{
+          marginTop: "20px",
+          background: "transparent",
+          border: "1px solid rgba(212, 175, 55, 0.3)",
+          borderRadius: "20px",
+          padding: "6px 16px",
+          color: "#D4AF37",
+          fontSize: "12px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          alignSelf: "center",
+          transition: "all 0.2s"
+        }}
+      >
+        {isPlaying ? "🔊 Pause Anthem" : "🔈 Play Tabor Anthem"}
+      </button>
+
+      <audio ref={audioRef} src="/tabor-anthem.mp3" loop />
+
       {/* Watermark */}
       <div style={{
-        position: "fixed",
-        bottom: "24px",
-        right: "24px",
+        position: isMobile ? "static" : "fixed",
+        bottom: isMobile ? "auto" : "24px",
+        right: isMobile ? "auto" : "24px",
+        marginTop: isMobile ? "20px" : "0",
         opacity: 0.25,
         color: "#D4AF37",
-        fontSize: "11px",
+        fontSize: "10px",
         fontWeight: "700",
         letterSpacing: "2px",
         textTransform: "uppercase",
         pointerEvents: "none",
         display: "flex",
+        justifyContent: "center",
         alignItems: "center",
         gap: "8px"
       }}>

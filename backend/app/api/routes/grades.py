@@ -59,9 +59,10 @@ async def get_subject_averages(
     Calculate the mean score for each subject across the entire school.
     Extracts subject name from class_name strings (Grade 9A - Mathematics).
     """
+    # Use COALESCE and split_part to handle cases where the separator might be missing
     query = (
         select(
-            func.split_part(SchoolClass.class_name, ' - ', 2).label("subject"),
+            func.coalesce(func.nullif(func.split_part(SchoolClass.class_name, ' - ', 2), ''), SchoolClass.class_name).label("subject"),
             func.avg(Grade.score).label("average")
         )
         .join(Grade, Grade.class_id == SchoolClass.id)

@@ -6,6 +6,7 @@ import { API_BASE_URL } from '@/lib/constants';
 interface SummaryData {
   total_students: number;
   active_teachers: number;
+  total_classes: number;
 }
 
 export default function DashboardSummaryCards({ token }: { token: string }) {
@@ -31,12 +32,14 @@ export default function DashboardSummaryCards({ token }: { token: string }) {
     border: '1px solid #D4AF37',
     borderRadius: '8px',
     padding: '24px',
-    flex: '1',
-    minWidth: '200px',
+    flex: '1 1 280px',
+    width: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
   };
 
   const labelStyle: React.CSSProperties = {
@@ -56,7 +59,19 @@ export default function DashboardSummaryCards({ token }: { token: string }) {
 
   return (
     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', marginBottom: '32px' }}>
-      <div style={cardStyle}>
+      <div 
+        style={cardStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#111';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        }}
+      >
         <div style={labelStyle}>Total Students</div>
         <div style={valueStyle}>
           {data?.total_students.toLocaleString()}
@@ -66,13 +81,47 @@ export default function DashboardSummaryCards({ token }: { token: string }) {
         </div>
       </div>
 
-      <div style={cardStyle}>
+      <div 
+        style={cardStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#111';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        }}
+      >
         <div style={labelStyle}>Active Teachers</div>
         <div style={valueStyle}>
           {data?.active_teachers.toLocaleString()}
         </div>
         <div style={{ color: '#444', fontSize: '10px', marginTop: '4px' }}>
           Verified Faculty
+        </div>
+      </div>
+
+      <div 
+        style={cardStyle}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '#111';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        }}
+      >
+        <div style={labelStyle}>Total Classes</div>
+        <div style={valueStyle}>
+          {data?.total_classes.toLocaleString()}
+        </div>
+        <div style={{ color: '#444', fontSize: '10px', marginTop: '4px' }}>
+          Active Sections
         </div>
       </div>
     </div>

@@ -64,3 +64,4 @@ class DashboardSummaryResponse(BaseModel):
     """
     total_students: int
     active_teachers: int
+    total_classes: int

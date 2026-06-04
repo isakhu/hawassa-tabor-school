@@ -15,6 +15,7 @@ from app.api.dependencies import get_current_user
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
+from app.models.class_model import SchoolClass
 from app.models.student import Student
 from app.models.teacher import Teacher
 from app.models.user import User, Role
@@ -53,16 +54,22 @@ async def get_dashboard_summary(
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access restricted to administrators.")
 
-    student_count = await db.scalar(select(func.count(Student.id)))
+    student_count = await db.scalar(
+        select(func.count(Student.id))
+        .join(User, Student.user_id == User.id)
+        .where(User.is_active == True)
+    )
     teacher_count = await db.scalar(
         select(func.count(Teacher.id))
         .join(User, Teacher.user_id == User.id)
         .where(User.is_active == True)
     )
+    class_count = await db.scalar(select(func.count(SchoolClass.id)))
 
     return DashboardSummaryResponse(
         total_students=student_count or 0,
-        active_teachers=teacher_count or 0
+        active_teachers=teacher_count or 0,
+        total_classes=class_count or 0
     )
 
 

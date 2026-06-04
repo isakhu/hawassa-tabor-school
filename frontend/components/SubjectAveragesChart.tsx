@@ -62,7 +62,8 @@ export default function SubjectAveragesChart({ token }: { token: string }) {
             <XAxis 
               dataKey="subject" 
               stroke="#666" 
-              fontSize={11} 
+              fontSize={10} 
+              interval={0}
               tickLine={false}
               axisLine={false}
             />

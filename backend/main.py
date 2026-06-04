@@ -5,6 +5,7 @@ Run with: uvicorn main:app --reload
 
 from contextlib import asynccontextmanager
 import random
+import asyncio
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,7 +37,7 @@ async def seed_admin():
     """
     from sqlalchemy import select
     from app.core.database import AsyncSessionLocal
-    from app.core.security import hash_password
+    from app.core.security import hash_password, verify_password
     from app.models.user import User, Role
 
     async with AsyncSessionLocal() as session:
@@ -47,11 +48,19 @@ async def seed_admin():
         existing_admin = result.scalar_one_or_none()
 
         if existing_admin:
-            # Update admin to match current config (allows password/name changes)
-            existing_admin.full_name = settings.ADMIN_FULL_NAME
-            existing_admin.password_hash = hash_password(settings.ADMIN_PASSWORD)
-            await session.commit()
-            print(f"✅ Admin credentials synced: {settings.ADMIN_EMAIL}")
+            # Only update if there is a discrepancy to avoid redundant DB writes on every startup
+            updated = False
+            if existing_admin.full_name != settings.ADMIN_FULL_NAME:
+                existing_admin.full_name = settings.ADMIN_FULL_NAME
+                updated = True
+            
+            if not verify_password(settings.ADMIN_PASSWORD, existing_admin.password_hash):
+                existing_admin.password_hash = hash_password(settings.ADMIN_PASSWORD)
+                updated = True
+            
+            if updated:
+                await session.commit()
+                print(f"✅ Admin credentials updated: {settings.ADMIN_EMAIL}")
             return
 
         # Create the admin
@@ -66,11 +75,12 @@ async def seed_admin():
         await session.commit()
         print(f"🚀 Default admin created: {settings.ADMIN_EMAIL}")
 
-async def seed_demo_data():
+async def seed_demo_data_task():
     """
     Populates the database with 70 teachers, 9 subjects per class,
     1500 students, and random grades for every student/subject.
     """
+    print("⏳ Starting demo data seeding in background...")
     from sqlalchemy import select, func
     from app.core.database import AsyncSessionLocal
     from app.core.security import hash_password
@@ -87,6 +97,9 @@ async def seed_demo_data():
     ]
 
     async with AsyncSessionLocal() as session:
+        # Wait a moment to ensure app is fully bound to port
+        await asyncio.sleep(2)
+        
         # 1. Seed 70 Teachers
         existing_teachers = await session.execute(select(func.count(Teacher.id)))
         if existing_teachers.scalar() < 70:
@@ -118,10 +131,10 @@ async def seed_demo_data():
         # Check if we already have students seeded
         existing_count = await session.execute(select(func.count(Student.id)))
         if existing_count.scalar() >= 1500:
-            print("✅ Demo students already seeded.")
+            print("✅ Demo data already exists.")
             return
 
-        print("⏳ Seeding 1500 students and 13,500 grade records... please wait.")
+        print("⏳ Seeding 1500 students and 13,500 grades... (Background)")
         
         grades_config = {
             9: {"sections": ["A", "B", "C", "D", "E"], "per_section": 60},
@@ -133,7 +146,7 @@ async def seed_demo_data():
         for grade, config in grades_config.items():
             for section_letter in config["sections"]:
                 # 1. Create 9 classes (one for each subject) for this section
-                section_data = [] # Store (class_obj, teacher_obj)
+                section_info = [] # Store (class_id, teacher_user_id)
                 for subject in SUBJECTS:
                     class_name = f"Grade {grade}{section_letter} - {subject}"
                     # Randomly assign a teacher
@@ -147,7 +160,8 @@ async def seed_demo_data():
                         academic_year="2024-2025"
                     )
                     session.add(school_class)
-                    section_data.append((school_class, assigned_teacher))
+                    await session.flush()
+                    section_info.append((school_class.id, assigned_teacher.user_id))
                 
                 await session.flush()
 
@@ -172,32 +186,36 @@ async def seed_demo_data():
                         section=section_letter
                     )
                     session.add(student)
-                    await session.flush() # get student.id
+                    await session.flush()
 
                     # Enroll in ALL 9 subject classes and generate random grades
-                    for s_class, s_teacher in section_data:
-                        enrollment = ClassEnrollment(class_id=s_class.id, student_id=student.id)
+                    grade_records = []
+                    for s_class_id, s_teacher_uid in section_info:
+                        enrollment = ClassEnrollment(class_id=s_class_id, student_id=student.id)
                         session.add(enrollment)
                         
                         # Random grade between 45 and 100
                         score = random.uniform(45, 100)
                         pct = round(score, 2)
                         
-                        grade_record = Grade(
-                            student_id=student.id,
-                            class_id=s_class.id,
-                            graded_by=s_teacher.user_id,
-                            assessment_type=AssessmentType.EXAM,
-                            term="Term 1",
-                            score=pct,
-                            max_score=100,
-                            grade_letter=calculate_grade_letter(pct),
-                            comments="Automatic demo seed"
+                        grade_records.append(
+                            Grade(
+                                student_id=student.id,
+                                class_id=s_class_id,
+                                graded_by=s_teacher_uid,
+                                assessment_type=AssessmentType.EXAM,
+                                term="Term 1",
+                                score=pct,
+                                max_score=100,
+                                grade_letter=calculate_grade_letter(pct),
+                                comments="Automatic demo seed"
+                            )
                         )
-                        session.add(grade_record)
-
-        await session.commit()
-        print("🚀 Demo data seeding complete: 1500 students, 70 teachers, and 13,500 grades.")
+                    session.add_all(grade_records)
+                
+                # Commit every section to keep memory usage low
+                await session.commit()
+    print("🚀 Demo data seeding complete.")
 
 # ---------------------------------------------------------------------------
 # Lifespan (startup / shutdown)
@@ -205,14 +223,11 @@ async def seed_demo_data():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Create all DB tables
     await create_all_tables()
-    # 2. Seed default admin if not exists
     await seed_admin()
-    # 3. Seed expanded demo data (Teachers, Students, Grades)
-    await seed_demo_data()
+    # Move heavy seeding to background task to prevent Render timeout
+    asyncio.create_task(seed_demo_data_task())
     yield
-    # Shutdown: dispose connection pool cleanly
     await engine.dispose()
 
 # ---------------------------------------------------------------------------

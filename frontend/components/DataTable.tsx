@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 
 export interface Column<T> {
   key: string;
@@ -18,6 +18,7 @@ interface DataTableProps<T extends { id: string }> {
   pageSize?: number;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
+  onRefresh?: () => Promise<void>;
 }
 
 // ─── Branded loader ───────────────────────────────────────────────────────────
@@ -52,9 +53,9 @@ function EmptyState({ message, icon }: { message: string; icon?: React.ReactNode
   );
 }
 
-function SkeletonRow({ cols }: { cols: number }) {
+function SkeletonRow({ cols, opacity = 1 }: { cols: number; opacity?: number }) {
   return (
-    <tr>
+    <tr style={{ opacity }}>
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} style={{ padding: "15px 16px" }}>
           <div className="skeleton" style={{ height: 13, borderRadius: 6, width: i === 0 ? 36 : `${60 + Math.random() * 30}%` }} />
@@ -69,8 +70,45 @@ export default function DataTable<T extends { id: string }>({
   searchQuery = "", searchKeys = [],
   pageSize = 10, emptyMessage = "No records found.",
   emptyIcon,
+  onRefresh,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(1);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const startY = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!onRefresh || isRefreshing || loading) return;
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].pageY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!onRefresh || isRefreshing || loading || startY.current === 0) return;
+    const deltaY = e.touches[0].pageY - startY.current;
+    if (deltaY > 0 && window.scrollY === 0) {
+      const distance = Math.min(deltaY * 0.35, 70);
+      setPullDistance(distance);
+      if (distance > 10 && e.cancelable) e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 55 && onRefresh) {
+      setIsRefreshing(true);
+      setPullDistance(50);
+      try {
+        await onRefresh();
+      } finally {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }
+    } else {
+      setPullDistance(0);
+    }
+    startY.current = 0;
+  };
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim() || searchKeys.length === 0) return data;
@@ -94,7 +132,37 @@ export default function DataTable<T extends { id: string }>({
   };
 
   return (
-    <div>
+    <div 
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ position: 'relative' }}
+    >
+      {/* Pull-to-refresh Indicator */}
+      {onRefresh && (
+        <div style={{
+          height: pullDistance || (isRefreshing ? 50 : 0),
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transition: pullDistance === 0 ? "height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)" : "none",
+          background: "rgba(212, 175, 55, 0.03)",
+          borderBottom: pullDistance > 0 || isRefreshing ? "1px solid rgba(212, 175, 55, 0.15)" : "none",
+          borderRadius: "14px 14px 0 0",
+          color: "#D4AF37",
+          fontSize: "12px",
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: "0.5px"
+        }}>
+          <span style={{ transform: `rotate(${pullDistance * 4}deg)`, marginRight: "10px", fontSize: "16px", display: "inline-block" }}>
+            {isRefreshing ? "⏳" : "⚓"}
+          </span>
+          {isRefreshing ? "Refreshing Records..." : pullDistance > 55 ? "Release to sync" : "Pull to sync"}
+        </div>
+      )}
+
       <div style={{ overflowX: "auto", borderRadius: 14, border: "1px solid rgba(99,102,241,0.12)" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -107,8 +175,8 @@ export default function DataTable<T extends { id: string }>({
             </tr>
           </thead>
           <tbody>
-            {loading
-              ? Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
+            {loading || isRefreshing
+              ? Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => <SkeletonRow key={i} cols={columns.length} opacity={isRefreshing ? 0.7 : 1} />)
               : paged.length === 0
                 ? <tr><td colSpan={columns.length}><EmptyState message={emptyMessage} icon={emptyIcon} /></td></tr>
                 : paged.map((row, rowIndex) => (
