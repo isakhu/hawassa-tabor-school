@@ -15,7 +15,7 @@ from app.api.dependencies import get_current_user
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.security import create_access_token, hash_password, verify_password
-from app.models.user import User, UserRole
+from app.models.user import User, Role
 from app.schemas.user import TokenResponse, UserCreate, UserLogin, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -39,9 +39,9 @@ async def get_me(current_user: Annotated[User, Depends(get_current_user)]) -> Us
     return UserResponse.model_validate(current_user)
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Admin only: create a new user account")
+@router.post("/register", resposnse_model=UserResponse, status_code=status.HTTP_201_CREATED, summary="Admin only: create a new user account")
 async def register(payload: UserCreate, db: Annotated[AsyncSession, Depends(get_db)], current_user: Annotated[User, Depends(get_current_user)]) -> UserResponse:
-    if current_user.role != UserRole.admin:
+    if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admins can create new user accounts.")
     result = await db.execute(select(User).where(User.email == payload.email))
     if result.scalar_one_or_none():
