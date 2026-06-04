@@ -35,7 +35,7 @@ async def seed_admin():
     """
     from sqlalchemy import select
     from app.core.database import AsyncSessionLocal
-    from app.core.security import get_password_hash
+    from app.core.security import hash_password
     from app.models.user import User, Role
 
     async with AsyncSessionLocal() as session:
@@ -53,7 +53,7 @@ async def seed_admin():
         admin = User(
             full_name=settings.ADMIN_FULL_NAME,
             email=settings.ADMIN_EMAIL,
-            hashed_password=get_password_hash(settings.ADMIN_PASSWORD),
+            password_hash=hash_password(settings.ADMIN_PASSWORD),
             role=Role.ADMIN,
             is_active=True,
         )
