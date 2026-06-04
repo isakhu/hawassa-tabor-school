@@ -7,7 +7,16 @@ import { saveToken, saveUser, dashboardForRole } from "@/lib/auth";
 
 export default function LoginPage() {
   return (
-    <div style={{ backgroundColor: "#0a0a0a", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+    <div style={{ 
+      backgroundImage: 'linear-gradient(rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.85)), url("https://images.unsplash.com/photo-1541339907198-e08756ebafe3?q=80&w=2070&auto=format&fit=crop")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      minHeight: "100vh", 
+      display: "flex", 
+      justifyContent: "center", 
+      alignItems: "center", 
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' 
+    }}>
       <Suspense fallback={<div>Loading...</div>}>
         <LoginContent />
       </Suspense>
@@ -140,6 +149,29 @@ function LoginContent() {
         <p style={{ fontSize: "14px", color: "#888" }}>
           Don't have an account? <span style={{ color: "#0095f6", fontWeight: "600", cursor: "pointer" }}>Contact Admin</span>
         </p>
+      </div>
+
+      {/* Watermark */}
+      <div style={{
+        position: "fixed",
+        bottom: "24px",
+        right: "24px",
+        opacity: 0.25,
+        color: "#D4AF37",
+        fontSize: "11px",
+        fontWeight: "700",
+        letterSpacing: "2px",
+        textTransform: "uppercase",
+        pointerEvents: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px"
+      }}>
+        <svg width="16" height="16" viewBox="0 0 48 48" fill="none">
+          <path d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z" stroke="#D4AF37" strokeWidth="4" fill="none" />
+          <path d="M17 24L22 29L31 19" stroke="#D4AF37" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Tabor School MS
       </div>
     </div>
   );
