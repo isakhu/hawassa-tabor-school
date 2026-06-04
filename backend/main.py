@@ -80,6 +80,16 @@ async def seed_demo_data_task():
     Populates the database with 70 teachers, 9 subjects per class,
     1500 students, and random grades for every student/subject.
     """
+    # Give Uvicorn time to bind the port and signal Render before we hit the DB
+    await asyncio.sleep(5)
+    
+    try:
+        await create_all_tables()
+        await seed_admin()
+    except Exception as e:
+        print(f"❌ Initial setup failed: {e}")
+        return
+
     print("⏳ Starting demo data seeding in background...")
     from sqlalchemy import select, func
     from app.core.database import AsyncSessionLocal
@@ -97,9 +107,6 @@ async def seed_demo_data_task():
     ]
 
     async with AsyncSessionLocal() as session:
-        # Wait a moment to ensure app is fully bound to port
-        await asyncio.sleep(2)
-        
         # 1. Seed 70 Teachers
         existing_teachers = await session.execute(select(func.count(Teacher.id)))
         if existing_teachers.scalar() < 70:
@@ -223,9 +230,9 @@ async def seed_demo_data_task():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_all_tables()
-    await seed_admin()
-    # Move heavy seeding to background task to prevent Render timeout
+    # Move ALL DB initialization to a background task. 
+    # This allows the lifespan to yield immediately so Uvicorn 
+    # can bind the port and satisfy Render's port scan.
     asyncio.create_task(seed_demo_data_task())
     yield
     await engine.dispose()
