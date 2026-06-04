@@ -133,7 +133,7 @@ async def seed_demo_data():
         for grade, config in grades_config.items():
             for section_letter in config["sections"]:
                 # 1. Create 9 classes (one for each subject) for this section
-                section_classes = []
+                section_data = [] # Store (class_obj, teacher_obj)
                 for subject in SUBJECTS:
                     class_name = f"Grade {grade}{section_letter} - {subject}"
                     # Randomly assign a teacher
@@ -147,7 +147,7 @@ async def seed_demo_data():
                         academic_year="2024-2025"
                     )
                     session.add(school_class)
-                    section_classes.append(school_class)
+                    section_data.append((school_class, assigned_teacher))
                 
                 await session.flush()
 
@@ -165,12 +165,17 @@ async def seed_demo_data():
                     session.add(user)
                     await session.flush() # get user.id
 
-                    student = Student(user_id=user.id, student_number=f"STU-{username}")
+                    student = Student(
+                        user_id=user.id, 
+                        student_number=f"STU-{username}",
+                        grade_level=str(grade),
+                        section=section_letter
+                    )
                     session.add(student)
                     await session.flush() # get student.id
 
                     # Enroll in ALL 9 subject classes and generate random grades
-                    for s_class in section_classes:
+                    for s_class, s_teacher in section_data:
                         enrollment = ClassEnrollment(class_id=s_class.id, student_id=student.id)
                         session.add(enrollment)
                         
@@ -181,7 +186,7 @@ async def seed_demo_data():
                         grade_record = Grade(
                             student_id=student.id,
                             class_id=s_class.id,
-                            graded_by=s_class.teacher.user_id if s_class.teacher else None,
+                            graded_by=s_teacher.user_id,
                             assessment_type=AssessmentType.EXAM,
                             term="Term 1",
                             score=pct,

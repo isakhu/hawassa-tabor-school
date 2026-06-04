@@ -110,3 +110,11 @@ class GradeReportItem(BaseModel):
     average_score: float
     average_percentage: float
     overall_grade_letter: str   # calculated from average_percentage
+
+
+class SubjectAverageResponse(BaseModel):
+    """
+    Statistics for subject performance across all classes.
+    """
+    subject: str
+    average: float

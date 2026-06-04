@@ -56,3 +56,11 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int          # seconds until expiry
     user: UserResponse
+
+
+class DashboardSummaryResponse(BaseModel):
+    """
+    High-level stats for the Admin dashboard.
+    """
+    total_students: int
+    active_teachers: int

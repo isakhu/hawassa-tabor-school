@@ -19,7 +19,7 @@ import uuid
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -30,10 +30,47 @@ from app.models.grade import AssessmentType, Grade
 from app.models.student import Student
 from app.models.teacher import Teacher
 from app.models.user import Role, User
-from app.schemas.grade import GradeCreate, GradeReportItem, GradeResponse, GradeUpdate
+from app.schemas.grade import (
+    GradeCreate,
+    GradeReportItem,
+    GradeResponse,
+    GradeUpdate,
+    SubjectAverageResponse,
+)
 from app.utils.grading import calculate_grade_letter
 
 router = APIRouter(prefix="/grades", tags=["Grades"])
+
+
+# ---------------------------------------------------------------------------
+# GET /grades/stats/subject-averages — ADMIN only
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/stats/subject-averages",
+    response_model=list[SubjectAverageResponse],
+    summary="Get average performance per subject (Admin only)",
+)
+async def get_subject_averages(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _admin: Annotated[User, Depends(require_admin)],
+) -> list[SubjectAverageResponse]:
+    """
+    Calculate the mean score for each subject across the entire school.
+    Extracts subject name from class_name strings (Grade 9A - Mathematics).
+    """
+    query = (
+        select(
+            func.split_part(SchoolClass.class_name, ' - ', 2).label("subject"),
+            func.avg(Grade.score).label("average")
+        )
+        .join(Grade, Grade.class_id == SchoolClass.id)
+        .group_by(text("subject"))
+        .order_by(text("average DESC"))
+    )
+    result = await db.execute(query)
+    rows = result.all()
+    return [SubjectAverageResponse(subject=row.subject, average=round(row.average, 2)) for row in rows]
 
 
 # ---------------------------------------------------------------------------
