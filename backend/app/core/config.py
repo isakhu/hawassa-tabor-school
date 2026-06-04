@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── CORS ──────────────────────────────────────────────────────────────
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app,https://school-managment-system5.vercel.app"
 
     # ── App ───────────────────────────────────────────────────────────────
     ENVIRONMENT: str = "development"
