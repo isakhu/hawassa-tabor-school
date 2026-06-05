@@ -96,6 +96,13 @@ function LoginContent() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  // Debug: Log if API URL is missing
+  useEffect(() => {
+    if (!API_BASE_URL) {
+      console.error("Critical: NEXT_PUBLIC_API_URL is not defined in environment variables.");
+    }
+  }, []);
+
   // Safety: Ensure we only run client-side logic after mounting
   useEffect(() => {
     setMounted(true);

@@ -3,7 +3,7 @@
 A full-stack school management platform built with Next.js 14 and FastAPI.
 
 ## Live Demo
-- **Frontend:** https://your-app.vercel.app *(update after deploy)*
+- **Frontend:** https://your-new-app-name.vercel.app
 - **Backend API:** https://school-managment-system-h7mn.onrender.com
 - **API Docs:** https://school-managment-system-h7mn.onrender.com/docs
 

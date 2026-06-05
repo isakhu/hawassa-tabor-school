@@ -187,10 +187,10 @@ async def seed_demo_data_task():
                     await session.flush() # get user.id
 
                     student = Student(
-                        user_id=user.id, 
+                        user_id=user.id,
                         student_number=f"STU-{username}",
-                        grade_level=str(grade),
-                        section=section_letter
+                        grade_level=str(grade),  # Ensure this is passed as string
+                        section=str(section_letter)
                     )
                     session.add(student)
                     await session.flush()
