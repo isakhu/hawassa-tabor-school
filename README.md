@@ -70,9 +70,7 @@ cp .env.local.example .env.local   # or create manually
 npm run dev
 ```
 
-Open http://localhost:3000
 
----
 
 ## Environment Variables
 
