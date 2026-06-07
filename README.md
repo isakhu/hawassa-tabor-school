@@ -20,7 +20,7 @@ A full-stack school management platform built with Next.js 14 and FastAPI.
 
 ---
 
-## Features
+## FeatureS
 
 - **JWT Authentication** with role-based access control (RBAC)
 - **Admin Dashboard** — stats, activity feed, quick actions
