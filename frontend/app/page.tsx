@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // Home / Landing Page
 // This is the public-facing entry point of the application.
 // It will display a marketing/welcome page with a brief overview of the system,
