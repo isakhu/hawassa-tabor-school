@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # ── CORS ──────────────────────────────────────────────────────────────
     # For the demo, we allow the specific URLs. 
     # Ensure no spaces exist between commas.
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app,https://school-managment-system5.vercel.app,https://school-managment-system-git-main-yishak-tule-s-projects.vercel.app,https://hawassa-tabor.vercel.app,https://your-new-app-name.vercel.app"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app,https://school-managment-system5.vercel.app,https://school-managment-system-git-main-yishak-tule-s-projects.vercel.app,https://hawassa-tabor.vercel.app,https://your-actual-new-domain.vercel.app"
 
     # ── App ───────────────────────────────────────────────────────────────
     ENVIRONMENT: str = "development"

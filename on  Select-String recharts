@@ -1,0 +1,5 @@
+[33mcommit ca347659f644a3f2bdb397092e945d25a92f1dd4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: isak22 <yishakhak@gmail.com>
+Date:   Fri Jun 5 15:32:30 2026 +0300
+
+    Fix: Add missing recharts dependency and update CORS for new deployment
