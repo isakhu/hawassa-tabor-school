@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Syne, DM_Sans } from "next/font/google";
+import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
 import "./globals.css";
 
 const syne = Syne({
@@ -39,13 +40,32 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const buildId = process.env.NEXT_PUBLIC_BUILD_ID ?? "local";
+
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="min-h-screen antialiased" style={{ backgroundColor: "#08080f" }}>
+        <ServiceWorkerCleanup />
         {children}
+        <div
+          aria-label={`Build ${buildId}`}
+          style={{
+            position: "fixed",
+            right: "8px",
+            bottom: "6px",
+            zIndex: 50,
+            color: "rgba(255, 255, 255, 0.45)",
+            fontSize: "10px",
+            lineHeight: 1,
+            fontFamily: "monospace",
+            pointerEvents: "none",
+          }}
+        >
+          build {buildId}
+        </div>
       </body>
     </html>
   );
