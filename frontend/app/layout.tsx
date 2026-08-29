@@ -19,25 +19,23 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: "Tabor School — School Management System",
-    template: "%s | Tabor School",
+    default: "Hawassa Tabor Primary and Secondary School — Management System",
+    template: "%s | Hawassa Tabor School",
   },
   description:
-    "Tabor School management system for students, teachers, classes, attendance, grades, and academic administration.",
+    "School management system for Hawassa Tabor Primary and Secondary School.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "Tabor School — School Management System",
-    description: "School administration for students, teachers, classes, attendance, and grades.",
+    title: "Hawassa Tabor Primary and Secondary School",
+    description: "School management system for Hawassa Tabor Primary and Secondary School.",
     type: "website",
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const buildId = process.env.NEXT_PUBLIC_BUILD_ID ?? "local";
-
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
       <head>
@@ -46,9 +44,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased" style={{ backgroundColor: "#f6f9fd" }}>
         <ServiceWorkerCleanup />
         {children}
-        <div aria-label={`Build ${buildId}`} style={{ position: "fixed", right: "8px", bottom: "6px", zIndex: 50, color: "rgba(78,101,125,0.35)", fontSize: "10px", lineHeight: 1, fontFamily: "monospace", pointerEvents: "none" }}>
-          build {buildId}
-        </div>
       </body>
     </html>
   );
