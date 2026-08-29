@@ -13,33 +13,29 @@ const syne = Syne({
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "EduCore — School Management System",
-    template: "%s | EduCore",
+    default: "Tabor School — School Management System",
+    template: "%s | Tabor School",
   },
   description:
-    "The future of school management. Manage students, teachers, classes, attendance, and grades — all in one platform.",
+    "Tabor School management system for students, teachers, classes, attendance, grades, and academic administration.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    title: "EduCore — School Management System",
-    description: "The future of school management.",
+    title: "Tabor School — School Management System",
+    description: "School administration for students, teachers, classes, attendance, and grades.",
     type: "website",
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const buildId = process.env.NEXT_PUBLIC_BUILD_ID ?? "local";
 
   return (
@@ -47,23 +43,10 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className="min-h-screen antialiased" style={{ backgroundColor: "#08080f" }}>
+      <body className="min-h-screen antialiased" style={{ backgroundColor: "#f6f9fd" }}>
         <ServiceWorkerCleanup />
         {children}
-        <div
-          aria-label={`Build ${buildId}`}
-          style={{
-            position: "fixed",
-            right: "8px",
-            bottom: "6px",
-            zIndex: 50,
-            color: "rgba(255, 255, 255, 0.45)",
-            fontSize: "10px",
-            lineHeight: 1,
-            fontFamily: "monospace",
-            pointerEvents: "none",
-          }}
-        >
+        <div aria-label={`Build ${buildId}`} style={{ position: "fixed", right: "8px", bottom: "6px", zIndex: 50, color: "rgba(78,101,125,0.35)", fontSize: "10px", lineHeight: 1, fontFamily: "monospace", pointerEvents: "none" }}>
           build {buildId}
         </div>
       </body>
