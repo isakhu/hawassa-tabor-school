@@ -54,6 +54,14 @@ class StudentRegistration(BaseModel):
     guardian_contact: str | None = None
 
 
+class TeacherRegistration(BaseModel):
+    full_name: str = Field(min_length=2, max_length=255)
+    teacher_number: str | None = Field(default=None, max_length=50)
+    subject_specialization: str = Field(min_length=2, max_length=100)
+    department: str | None = Field(default=None, max_length=100)
+    phone_number: str | None = Field(default=None, max_length=50)
+
+
 async def _teacher(teacher_id: uuid.UUID, db: AsyncSession) -> Teacher:
     result = await db.execute(select(Teacher).where(Teacher.id == teacher_id))
     teacher = result.scalar_one_or_none()
@@ -70,9 +78,57 @@ async def _school_class(class_id: uuid.UUID, db: AsyncSession) -> SchoolClass:
     return school_class
 
 
+@router.post("/teachers/register", status_code=status.HTTP_201_CREATED)
+async def register_teacher(
+    payload: TeacherRegistration,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(require_admin)],
+):
+    """Create a teacher account and profile in one manager operation.
+
+    The generated login code is returned once so the manager can securely
+    hand it to the teacher. The code is stored only as a password hash.
+    """
+    teacher_number = payload.teacher_number or f"TCH-{secrets.token_hex(4).upper()}"
+    duplicate = await db.execute(select(Teacher).where(Teacher.teacher_number == teacher_number))
+    if duplicate.scalar_one_or_none():
+        raise HTTPException(409, "Teacher number already exists")
+
+    login_code = secrets.token_urlsafe(8)
+    login_id = f"teacher-{teacher_number.lower()}@educore.local"
+    user = User(
+        full_name=payload.full_name.strip(),
+        email=login_id,
+        password_hash=hash_password(login_code),
+        role=Role.TEACHER,
+        is_active=True,
+    )
+    db.add(user)
+    await db.flush()
+
+    teacher = Teacher(
+        user_id=user.id,
+        teacher_number=teacher_number,
+        subject_specialization=payload.subject_specialization.strip(),
+        department=payload.department,
+        phone_number=payload.phone_number,
+    )
+    db.add(teacher)
+    await db.flush()
+
+    return {
+        "message": "Teacher registered",
+        "teacher_id": str(teacher.id),
+        "teacher_number": teacher.teacher_number,
+        "full_name": user.full_name,
+        "login_id": login_id,
+        "login_code": login_code,
+    }
+
+
 @router.post("/subjects", status_code=status.HTTP_201_CREATED)
 async def create_subject(payload: SubjectCreate, db: Annotated[AsyncSession, Depends(get_db)], _: Annotated[User, Depends(require_admin)]):
-    existing = await db.execute(select(Subject).where(Subject.code == payload.code))
+    existing = await db.execute(select(Subject).where(Subject.code == payload.code.strip().upper()))
     if existing.scalar_one_or_none():
         raise HTTPException(409, "Subject code already exists")
     subject = Subject(name=payload.name.strip(), code=payload.code.strip().upper())
@@ -121,7 +177,7 @@ async def create_academic_class(payload: ClassCreateAcademic, db: Annotated[Asyn
         await _teacher(payload.class_head_id, db)
     result = await db.execute(select(SchoolClass).where(
         SchoolClass.grade_level == payload.grade_level,
-        SchoolClass.section == payload.section,
+        SchoolClass.section == payload.section.upper(),
         SchoolClass.academic_year == payload.academic_year,
     ))
     if result.scalar_one_or_none():
