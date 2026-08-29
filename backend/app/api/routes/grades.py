@@ -13,6 +13,7 @@ Business rules:
   - grade_letter is ALWAYS auto-calculated from (score / max_score * 100)
   - Teacher can only grade students in their own assigned classes
   - Student can only read their own grades
+  - Teacher report access is limited to classes assigned to that teacher
 """
 
 import uuid
@@ -42,10 +43,6 @@ from app.utils.grading import calculate_grade_letter
 router = APIRouter(prefix="/grades", tags=["Grades"])
 
 
-# ---------------------------------------------------------------------------
-# GET /grades/stats/subject-averages — ADMIN only
-# ---------------------------------------------------------------------------
-
 @router.get(
     "/stats/subject-averages",
     response_model=list[SubjectAverageResponse],
@@ -55,15 +52,10 @@ async def get_subject_averages(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(require_admin)],
 ) -> list[SubjectAverageResponse]:
-    """
-    Calculate the mean score for each subject across the entire school.
-    Extracts subject name from class_name strings (Grade 9A - Mathematics).
-    """
-    # Use COALESCE and split_part to handle cases where the separator might be missing
     query = (
         select(
-            func.coalesce(func.nullif(func.split_part(SchoolClass.class_name, ' - ', 2), ''), SchoolClass.class_name).label("subject"),
-            func.avg(Grade.score).label("average")
+            func.coalesce(func.nullif(func.split_part(SchoolClass.class_name, " - ", 2), ""), SchoolClass.class_name).label("subject"),
+            func.avg(Grade.score).label("average"),
         )
         .join(Grade, Grade.class_id == SchoolClass.id)
         .group_by(text("subject"))
@@ -74,18 +66,11 @@ async def get_subject_averages(
     return [SubjectAverageResponse(subject=row.subject, average=round(row.average, 2)) for row in rows]
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
 async def _get_grade_or_404(grade_id: uuid.UUID, db: AsyncSession) -> Grade:
     result = await db.execute(select(Grade).where(Grade.id == grade_id))
     grade = result.scalar_one_or_none()
     if grade is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Grade {grade_id} not found.",
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Grade {grade_id} not found.")
     return grade
 
 
@@ -99,27 +84,31 @@ async def _get_student_profile(user_id: uuid.UUID, db: AsyncSession) -> Student 
     return result.scalar_one_or_none()
 
 
-async def _assert_teacher_owns_class(
-    teacher: Teacher, class_id: uuid.UUID, db: AsyncSession
-) -> None:
+async def _assert_teacher_owns_class(teacher: Teacher, class_id: uuid.UUID, db: AsyncSession) -> None:
     result = await db.execute(
-        select(SchoolClass).where(
+        select(SchoolClass).where(SchoolClass.id == class_id, SchoolClass.teacher_id == teacher.id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only manage grades for your own assigned classes.")
+
+
+async def _assert_student_enrolled(student_id: uuid.UUID, class_id: uuid.UUID, db: AsyncSession) -> None:
+    """Ensure academic records cannot be created for an unrelated student/class pair."""
+    result = await db.execute(
+        select(Student.id).join(Student.classes).where(
+            Student.id == student_id,
             SchoolClass.id == class_id,
-            SchoolClass.teacher_id == teacher.id,
         )
     )
     if result.scalar_one_or_none() is None:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only manage grades for your own assigned classes.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Student is not enrolled in the selected class.",
         )
 
 
 def _to_response(grade: Grade) -> GradeResponse:
-    """Build a GradeResponse, computing percentage inline."""
-    percentage = round(
-        (grade.score / grade.max_score) * 100, 2
-    ) if grade.max_score else 0.0
+    percentage = round((grade.score / grade.max_score) * 100, 2) if grade.max_score else 0.0
     return GradeResponse(
         id=grade.id,
         student_id=grade.student_id,
@@ -137,51 +126,29 @@ def _to_response(grade: Grade) -> GradeResponse:
     )
 
 
-# ---------------------------------------------------------------------------
-# POST /grades  — TEACHER, ADMIN
-# ---------------------------------------------------------------------------
-
-@router.post(
-    "",
-    response_model=GradeResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Submit a grade (Teacher or Admin)",
-)
+@router.post("", response_model=GradeResponse, status_code=status.HTTP_201_CREATED, summary="Submit a grade (Teacher or Admin)")
 async def create_grade(
     payload: GradeCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_teacher)],
 ) -> GradeResponse:
-    """
-    Submit a grade for a student in a class.
-    grade_letter is calculated automatically — do not supply it in the request.
-    """
-    # Teachers must own the class
     if current_user.role == Role.TEACHER:
         teacher = await _get_teacher_profile(current_user.id, db)
         if teacher is None:
             raise HTTPException(status_code=403, detail="Teacher profile not found.")
         await _assert_teacher_owns_class(teacher, payload.class_id, db)
 
-    # Validate class exists
-    if not (await db.execute(
-        select(SchoolClass).where(SchoolClass.id == payload.class_id)
-    )).scalar_one_or_none():
+    if not (await db.execute(select(SchoolClass).where(SchoolClass.id == payload.class_id))).scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Class not found.")
-
-    # Validate student exists
-    if not (await db.execute(
-        select(Student).where(Student.id == payload.student_id)
-    )).scalar_one_or_none():
+    if not (await db.execute(select(Student).where(Student.id == payload.student_id))).scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Student not found.")
 
-    # Auto-calculate grade_letter
-    percentage = round((payload.score / payload.max_score) * 100, 2)
-    grade_letter = calculate_grade_letter(percentage)
+    await _assert_student_enrolled(payload.student_id, payload.class_id, db)
 
+    percentage = round((payload.score / payload.max_score) * 100, 2)
     grade = Grade(
         **payload.model_dump(),
-        grade_letter=grade_letter,
+        grade_letter=calculate_grade_letter(percentage),
         graded_by=current_user.id,
     )
     db.add(grade)
@@ -190,15 +157,7 @@ async def create_grade(
     return _to_response(grade)
 
 
-# ---------------------------------------------------------------------------
-# GET /grades  — TEACHER/ADMIN (all/filtered), STUDENT (own only)
-# ---------------------------------------------------------------------------
-
-@router.get(
-    "",
-    response_model=list[GradeResponse],
-    summary="List grades",
-)
+@router.get("", response_model=list[GradeResponse], summary="List grades")
 async def list_grades(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -207,34 +166,22 @@ async def list_grades(
     term: Optional[str] = Query(None),
     assessment_type: Optional[AssessmentType] = Query(None),
 ) -> list[GradeResponse]:
-    """
-    Return grades scoped by role:
-    - ADMIN    → all grades (with optional filters)
-    - TEACHER  → only grades for their assigned classes
-    - STUDENT  → only their own grades
-    """
     query = select(Grade)
-
     if current_user.role == Role.STUDENT:
         student = await _get_student_profile(current_user.id, db)
         if student is None:
             return []
         query = query.where(Grade.student_id == student.id)
-
     elif current_user.role == Role.TEACHER:
         teacher = await _get_teacher_profile(current_user.id, db)
         if teacher is None:
             return []
-        teacher_class_ids = select(SchoolClass.id).where(
-            SchoolClass.teacher_id == teacher.id
-        )
+        teacher_class_ids = select(SchoolClass.id).where(SchoolClass.teacher_id == teacher.id)
         query = query.where(Grade.class_id.in_(teacher_class_ids))
         if student_id:
             query = query.where(Grade.student_id == student_id)
-
-    else:  # ADMIN
-        if student_id:
-            query = query.where(Grade.student_id == student_id)
+    elif student_id:
+        query = query.where(Grade.student_id == student_id)
 
     if class_id:
         query = query.where(Grade.class_id == class_id)
@@ -248,37 +195,25 @@ async def list_grades(
     return [_to_response(g) for g in result.scalars().all()]
 
 
-# ---------------------------------------------------------------------------
-# GET /grades/report/{student_id}  — ADMIN, TEACHER (own), STUDENT (own)
-# Must be BEFORE /{id} to avoid route collision
-# ---------------------------------------------------------------------------
-
-@router.get(
-    "/report/{student_id}",
-    response_model=list[GradeReportItem],
-    summary="Get a student's grade report aggregated by class and term",
-)
+@router.get("/report/{student_id}", response_model=list[GradeReportItem], summary="Get a student's grade report aggregated by class and term")
 async def grade_report(
     student_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> list[GradeReportItem]:
-    """
-    Aggregate grades per class per term for a student.
-    Returns average score, average percentage, and overall letter grade.
-    """
-    # Access control
     if current_user.role == Role.STUDENT:
         student = await _get_student_profile(current_user.id, db)
         if student is None or student.id != student_id:
             raise HTTPException(status_code=403, detail="You can only view your own report.")
 
-    elif current_user.role == Role.TEACHER:
+    teacher_class_ids: set[uuid.UUID] | None = None
+    if current_user.role == Role.TEACHER:
         teacher = await _get_teacher_profile(current_user.id, db)
         if teacher is None:
             raise HTTPException(status_code=403, detail="Teacher profile not found.")
+        class_result = await db.execute(select(SchoolClass.id).where(SchoolClass.teacher_id == teacher.id))
+        teacher_class_ids = {row[0] for row in class_result.all()}
 
-    # Fetch all grades for the student, eager-load class name
     result = await db.execute(
         select(Grade)
         .where(Grade.student_id == student_id)
@@ -287,87 +222,60 @@ async def grade_report(
     )
     grades = result.scalars().all()
 
-    # Aggregate per (class_id, term)
-    buckets: dict[tuple, dict] = {}
-    for g in grades:
-        key = (g.class_id, g.term)
+    if current_user.role == Role.TEACHER:
+        grades = [g for g in grades if g.class_id in (teacher_class_ids or set())]
+
+    buckets: dict[tuple[uuid.UUID, str], dict] = {}
+    for grade in grades:
+        key = (grade.class_id, grade.term)
         if key not in buckets:
             buckets[key] = {
-                "class_id": g.class_id,
-                "class_name": g.school_class.class_name,
-                "term": g.term,
+                "class_id": grade.class_id,
+                "class_name": grade.school_class.class_name,
+                "term": grade.term,
                 "scores": [],
                 "percentages": [],
             }
-        pct = round((g.score / g.max_score) * 100, 2) if g.max_score else 0.0
-        buckets[key]["scores"].append(g.score)
-        buckets[key]["percentages"].append(pct)
+        percentage = round((grade.score / grade.max_score) * 100, 2) if grade.max_score else 0.0
+        buckets[key]["scores"].append(grade.score)
+        buckets[key]["percentages"].append(percentage)
 
-    report = []
-    for data in buckets.values():
-        avg_score = round(sum(data["scores"]) / len(data["scores"]), 2)
-        avg_pct   = round(sum(data["percentages"]) / len(data["percentages"]), 2)
-        report.append(
-            GradeReportItem(
-                class_id=data["class_id"],
-                class_name=data["class_name"],
-                term=data["term"],
-                assessment_count=len(data["scores"]),
-                average_score=avg_score,
-                average_percentage=avg_pct,
-                overall_grade_letter=calculate_grade_letter(avg_pct),
-            )
+    return [
+        GradeReportItem(
+            class_id=data["class_id"],
+            class_name=data["class_name"],
+            term=data["term"],
+            assessment_count=len(data["scores"]),
+            average_score=round(sum(data["scores"]) / len(data["scores"]), 2),
+            average_percentage=round(sum(data["percentages"]) / len(data["percentages"]), 2),
+            overall_grade_letter=calculate_grade_letter(round(sum(data["percentages"]) / len(data["percentages"]), 2)),
         )
-    return report
+        for data in buckets.values()
+    ]
 
 
-# ---------------------------------------------------------------------------
-# GET /grades/{id}  — TEACHER/ADMIN (any), STUDENT (own only)
-# ---------------------------------------------------------------------------
-
-@router.get(
-    "/{grade_id}",
-    response_model=GradeResponse,
-    summary="Get a single grade record",
-)
+@router.get("/{grade_id}", response_model=GradeResponse, summary="Get a single grade record")
 async def get_grade(
     grade_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> GradeResponse:
     grade = await _get_grade_or_404(grade_id, db)
-
     if current_user.role == Role.STUDENT:
         student = await _get_student_profile(current_user.id, db)
         if student is None or grade.student_id != student.id:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only view your own grades.",
-            )
+            raise HTTPException(status_code=403, detail="You can only view your own grades.")
     return _to_response(grade)
 
 
-# ---------------------------------------------------------------------------
-# PUT /grades/{id}  — TEACHER (own classes), ADMIN
-# ---------------------------------------------------------------------------
-
-@router.put(
-    "/{grade_id}",
-    response_model=GradeResponse,
-    summary="Update a grade (Teacher or Admin)",
-)
+@router.put("/{grade_id}", response_model=GradeResponse, summary="Update a grade (Teacher or Admin)")
 async def update_grade(
     grade_id: uuid.UUID,
     payload: GradeUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(require_teacher)],
 ) -> GradeResponse:
-    """
-    Update score, max_score, term, type, or comments.
-    grade_letter is recalculated automatically — never accepted as input.
-    """
     grade = await _get_grade_or_404(grade_id, db)
-
     if current_user.role == Role.TEACHER:
         teacher = await _get_teacher_profile(current_user.id, db)
         if teacher is None:
@@ -377,24 +285,13 @@ async def update_grade(
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(grade, field, value)
-
-    # Recalculate grade_letter after any score/max_score update
     grade.update_grade_letter()
-
     await db.flush()
     await db.refresh(grade)
     return _to_response(grade)
 
 
-# ---------------------------------------------------------------------------
-# DELETE /grades/{id}  — ADMIN only
-# ---------------------------------------------------------------------------
-
-@router.delete(
-    "/{grade_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Delete a grade record (Admin only)",
-)
+@router.delete("/{grade_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a grade record (Admin only)")
 async def delete_grade(
     grade_id: uuid.UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
