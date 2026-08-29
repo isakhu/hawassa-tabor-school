@@ -1,17 +1,10 @@
-"""Academic structure for EduCore.
-
-One class has one head teacher, while each subject is assigned to its own
-subject teacher for an academic year.
-"""
+"""Academic structure for curriculum and teacher assignments."""
 import uuid
 from datetime import datetime
-
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from app.core.database import Base
-
 
 class Subject(Base):
     __tablename__ = "subjects"
@@ -23,7 +16,6 @@ class Subject(Base):
     curriculum_subjects: Mapped[list["CurriculumSubject"]] = relationship(back_populates="subject", cascade="all, delete-orphan")
     assignments: Mapped[list["TeacherAssignment"]] = relationship(back_populates="subject")
 
-
 class CurriculumSubject(Base):
     __tablename__ = "curriculum_subjects"
     __table_args__ = (UniqueConstraint("grade_level", "subject_id", "academic_year", name="uq_curriculum_grade_subject_year"),)
@@ -33,7 +25,6 @@ class CurriculumSubject(Base):
     academic_year: Mapped[str] = mapped_column(String(20), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     subject: Mapped[Subject] = relationship(back_populates="curriculum_subjects")
-
 
 class TeacherAssignment(Base):
     __tablename__ = "teacher_assignments"
