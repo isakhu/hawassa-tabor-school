@@ -1,23 +1,26 @@
 """Small dependency-free PDF builder for final student results."""
 from io import BytesIO
 
+SCHOOL_NAME = "Hawassa Tabor Primary and Secondary School"
+
 
 def _escape(value: object) -> str:
     return str(value).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
 def build_result_pdf(
-    school_name: str,
-    student_name: str,
-    student_number: str,
-    grade_level: str,
-    section: str,
-    academic_year: str,
-    subjects: list[dict],
-    total: float,
-    overall_average: float,
-    overall_grade: str,
+    school_name: str = SCHOOL_NAME,
+    student_name: str = "",
+    student_number: str = "",
+    grade_level: str = "",
+    section: str = "",
+    academic_year: str = "",
+    subjects: list[dict] | None = None,
+    total: float = 0.0,
+    overall_average: float = 0.0,
+    overall_grade: str = "",
 ) -> bytes:
+    subjects = subjects or []
     lines = [
         school_name,
         "FINAL STUDENT RESULT",
