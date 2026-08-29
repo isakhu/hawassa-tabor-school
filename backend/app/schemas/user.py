@@ -1,67 +1,46 @@
-"""
-User Pydantic schemas.
-Defines the shapes of request bodies and response payloads for user-related endpoints.
-Password is NEVER included in response schemas.
-"""
-
+"""User Pydantic schemas."""
 import uuid
 from datetime import datetime
-
-from pydantic import BaseModel, Field, field_validator
-
+from pydantic import BaseModel, Field, model_validator
 from app.models.user import Role
 
-
-# ---------------------------------------------------------------------------
-# Shared base
-# ---------------------------------------------------------------------------
-
 class UserBase(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=255, examples=["Jane Doe"])
-    email: str = Field(..., examples=["admin", "jane@school.edu"])
-    role: Role = Field(..., examples=[Role.STUDENT])
-
-
-# ---------------------------------------------------------------------------
-# Request schemas
-# ---------------------------------------------------------------------------
+    full_name: str = Field(..., min_length=2, max_length=255)
+    email: str
+    role: Role
 
 class UserCreate(UserBase):
-    """Used for POST /auth/register — includes plain-text password."""
-    password: str = Field(..., min_length=1, max_length=128, examples=["123"])
-
+    password: str = Field(..., min_length=1, max_length=128)
 
 class UserLogin(BaseModel):
-    """Used for POST /auth/login."""
-    email: str = Field(..., examples=["admin"])
-    password: str = Field(..., examples=["123"])
+    """Login accepts the generated login ID or the existing email field."""
+    email: str | None = None
+    login_id: str | None = None
+    password: str = Field(..., min_length=1, max_length=128)
 
+    @model_validator(mode="after")
+    def require_identifier(self):
+        if not (self.email or self.login_id):
+            raise ValueError("email or login_id is required")
+        return self
 
-# ---------------------------------------------------------------------------
-# Response schemas  (password fields are intentionally absent)
-# ---------------------------------------------------------------------------
+    @property
+    def identifier(self) -> str:
+        return self.login_id or self.email or ""
 
 class UserResponse(UserBase):
-    """Returned from register and profile endpoints."""
     id: uuid.UUID
     is_active: bool
     created_at: datetime
-
     model_config = {"from_attributes": True}
 
-
 class TokenResponse(BaseModel):
-    """Returned from login endpoint."""
     access_token: str
     token_type: str = "bearer"
-    expires_in: int          # seconds until expiry
+    expires_in: int
     user: UserResponse
 
-
 class DashboardSummaryResponse(BaseModel):
-    """
-    High-level stats for the Admin dashboard.
-    """
     total_students: int
     active_teachers: int
     total_classes: int
