@@ -61,7 +61,7 @@ button, input, select, textarea { font: inherit; }
 .logo-animated { animation: none; }
 .nav-active-bar { animation: none; }
 
-/* Existing sidebar uses inline styling; these rules unify it without changing its role/route logic. */
+/* Dashboard shell */
 aside { background: #ffffff !important; border-right: 1px solid #dbe5f0 !important; box-shadow: 5px 0 18px rgba(20,52,90,0.04) !important; }
 aside > div { background: #ffffff !important; }
 aside nav p { color: #8092a6 !important; }
@@ -71,10 +71,13 @@ aside nav a[style*="linear-gradient"] { background: #eaf2ff !important; color: #
 aside nav a span { color: #7890a7 !important; }
 aside nav a[style*="linear-gradient"] span { color: #1267e8 !important; }
 aside nav a > div { background: transparent !important; box-shadow: none !important; }
-aside nav a[style*="linear-gradient"] > div { background: #1267e8 !important; box-shadow: 0 0 0 0 transparent !important; }
-aside .gradient-text { background: linear-gradient(135deg,#0e58c7,#1e7cf0) !important; -webkit-background-clip: text !important; background-clip: text !important; }
+aside nav a[style*="linear-gradient"] > div { background: #1267e8 !important; box-shadow: none !important; }
 aside button { color: #71849a !important; }
 aside button:hover { background: #fff3f3 !important; color: #b63c3c !important; }
+
+/* Legacy inline styling on management screens: keep the layout, normalize the palette. */
+input, select, textarea { color-scheme: light; }
+input::placeholder, textarea::placeholder { color: #93a4b8; opacity: 1; }
 
 .educore-loader { display: inline-flex; gap: 6px; align-items: center; }
 .educore-loader span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: loaderPulse 1s ease-in-out infinite; }
