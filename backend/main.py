@@ -1,7 +1,6 @@
 """School Management System - FastAPI application entry point."""
 from contextlib import asynccontextmanager
 import asyncio
-import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -18,6 +17,7 @@ from app.api.routes.grade_workflow import router as grade_workflow_router
 from app.api.routes.teacher_dashboard import router as teacher_dashboard_router
 from app.api.routes.class_head_dashboard import router as class_head_dashboard_router
 from app.api.routes.student_portal import router as student_portal_router
+from app.api.routes.class_head_attendance import router as class_head_attendance_router
 
 async def seed_admin():
     from sqlalchemy import select
@@ -41,7 +41,7 @@ async def seed_demo_data_task():
     try: await create_all_tables(); await seed_admin()
     except Exception as exc: print(f"Initial database setup failed: {exc}"); return
     if not settings.DEMO_SEED_DATA: return
-    # Existing demonstration data seeding remains intentionally isolated from production workflows.
+    # Demonstration data is kept separate from manager-created school records.
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="School Management System API", description="Backend API for students, teachers, classes, grades, attendance, and academic administration.", version="1.0.0", lifespan=lifespan, docs_url="/docs" if not settings.is_production else None, redoc_url="/redoc" if not settings.is_production else None)
 app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins_list, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
-for router in (auth_router, students_router, teachers_router, classes_router, attendance_router, grades_router, academic_router, grade_workflow_router, teacher_dashboard_router, class_head_dashboard_router, student_portal_router):
+for router in (auth_router, students_router, teachers_router, classes_router, attendance_router, grades_router, academic_router, grade_workflow_router, teacher_dashboard_router, class_head_dashboard_router, student_portal_router, class_head_attendance_router):
     app.include_router(router, prefix="/api/v1")
 
 @app.get("/", tags=["Root"])
