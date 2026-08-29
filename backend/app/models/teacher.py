@@ -23,9 +23,21 @@ class Teacher(Base):
     updated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship("User", back_populates="teacher_profile")
-    classes: Mapped[list["SchoolClass"]] = relationship("SchoolClass", back_populates="teacher")
-    headed_classes: Mapped[list["SchoolClass"]] = relationship("SchoolClass", back_populates="class_head", foreign_keys="SchoolClass.class_head_id")
-    assignments: Mapped[list["TeacherAssignment"]] = relationship("TeacherAssignment", back_populates="teacher", cascade="all, delete-orphan")
+    classes: Mapped[list["SchoolClass"]] = relationship(
+        "SchoolClass",
+        back_populates="teacher",
+        foreign_keys="SchoolClass.teacher_id",
+    )
+    headed_classes: Mapped[list["SchoolClass"]] = relationship(
+        "SchoolClass",
+        back_populates="class_head",
+        foreign_keys="SchoolClass.class_head_id",
+    )
+    assignments: Mapped[list["TeacherAssignment"]] = relationship(
+        "TeacherAssignment",
+        back_populates="teacher",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<Teacher number={self.teacher_number!r} subject={self.subject_specialization!r}>"
