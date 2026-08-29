@@ -18,8 +18,8 @@ class ClassEnrollment(Base):
     student_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
     enrolled_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    school_class: Mapped["SchoolClass"] = relationship("SchoolClass", back_populates="enrollments")
-    student: Mapped["Student"] = relationship("Student", back_populates="enrollments")
+    school_class: Mapped["SchoolClass"] = relationship("SchoolClass", back_populates="enrollments", foreign_keys=[class_id])
+    student: Mapped["Student"] = relationship("Student", back_populates="enrollments", foreign_keys=[student_id])
 
 
 class SchoolClass(Base):
@@ -33,9 +33,7 @@ class SchoolClass(Base):
     room_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     academic_year: Mapped[str] = mapped_column(String(20), nullable=False)
 
-    # Legacy primary teacher relationship retained for compatibility.
     teacher_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, index=True)
-    # Exactly one head may be assigned; null means the manager has not assigned one yet.
     class_head_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, index=True)
 
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -44,7 +42,7 @@ class SchoolClass(Base):
     teacher: Mapped["Teacher"] = relationship("Teacher", back_populates="classes", foreign_keys=[teacher_id])
     class_head: Mapped["Teacher"] = relationship("Teacher", back_populates="headed_classes", foreign_keys=[class_head_id])
     teacher_assignments: Mapped[list["TeacherAssignment"]] = relationship("TeacherAssignment", back_populates="school_class", cascade="all, delete-orphan")
-    enrollments: Mapped[list[ClassEnrollment]] = relationship("ClassEnrollment", back_populates="school_class", cascade="all, delete-orphan")
+    enrollments: Mapped[list[ClassEnrollment]] = relationship("ClassEnrollment", back_populates="school_class", cascade="all, delete-orphan", foreign_keys=[ClassEnrollment.class_id])
     students: Mapped[list["Student"]] = relationship("Student", secondary="class_enrollments", viewonly=True, lazy="select")
     attendance_records: Mapped[list["Attendance"]] = relationship("Attendance", back_populates="school_class", cascade="all, delete-orphan", lazy="select")
     grades: Mapped[list["Grade"]] = relationship("Grade", back_populates="school_class", cascade="all, delete-orphan", lazy="select")
