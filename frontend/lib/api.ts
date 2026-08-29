@@ -20,7 +20,6 @@ export async function apiFetch<T = unknown>(
   endpoint: string,
   options: FetchOptions = {}
 ): Promise<T> {
-  // Retrieve token (only available in browser)
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem(STORAGE_KEYS.TOKEN)
@@ -38,7 +37,6 @@ export async function apiFetch<T = unknown>(
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  // Handle unauthenticated responses globally
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
@@ -48,7 +46,6 @@ export async function apiFetch<T = unknown>(
     throw new Error("Session expired. Please log in again.");
   }
 
-  // For 204 No Content (DELETE responses) return empty object
   if (response.status === 204) {
     return {} as T;
   }
@@ -56,7 +53,6 @@ export async function apiFetch<T = unknown>(
   const data = await response.json();
 
   if (!response.ok) {
-    // FastAPI returns { detail: string } on errors
     const message =
       typeof data?.detail === "string"
         ? data.detail
@@ -67,24 +63,68 @@ export async function apiFetch<T = unknown>(
   return data as T;
 }
 
+/** Download an authenticated binary file from the FastAPI backend. */
+export async function downloadFile(endpoint: string, fallbackFilename: string): Promise<void> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem(STORAGE_KEYS.TOKEN)
+      : null;
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "GET",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      window.location.href = ROUTES.LOGIN;
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) {
+    let message = "Unable to download the final result.";
+    try {
+      const data = await response.json();
+      message = typeof data?.detail === "string" ? data.detail : message;
+    } catch {
+      // Keep the fallback message for non-JSON errors.
+    }
+    throw new Error(message);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const match = disposition.match(/filename="?([^";]+)"?/i);
+  const filename = match?.[1] || fallbackFilename;
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ─── Typed helpers ────────────────────────────────────────────────────────────
 
-/** GET /endpoint */
 export function get<T = unknown>(endpoint: string): Promise<T> {
   return apiFetch<T>(endpoint, { method: "GET" });
 }
 
-/** POST /endpoint with JSON body */
 export function post<T = unknown>(endpoint: string, body: unknown): Promise<T> {
   return apiFetch<T>(endpoint, { method: "POST", body });
 }
 
-/** PUT /endpoint with JSON body */
 export function put<T = unknown>(endpoint: string, body: unknown): Promise<T> {
   return apiFetch<T>(endpoint, { method: "PUT", body });
 }
 
-/** DELETE /endpoint */
 export function del<T = unknown>(endpoint: string): Promise<T> {
   return apiFetch<T>(endpoint, { method: "DELETE" });
 }
