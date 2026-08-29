@@ -7,7 +7,7 @@ A full-stack school management platform built with **Next.js 14, TypeScript, Fas
 | | |
 |---|---|
 | **Intern** | Yishak Tule |
-| **Organization** | Sidam Science and Technology Agency |
+| **Organization** | Sidama Science and Technology Agency |
 | **Location** | Hawassa, Ethiopia |
 | **Field** | Software Engineering |
 | **Project** | EduCore — School Management System |
