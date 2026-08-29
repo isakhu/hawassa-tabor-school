@@ -6,7 +6,9 @@ Development values may come from backend/.env.
 Production values must be supplied by the hosting environment.
 """
 
-from pydantic import field_validator
+import os
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,12 +44,34 @@ class Settings(BaseSettings):
     @classmethod
     def secret_key_must_be_set(cls, v: str, info) -> str:
         if v == "changeme":
-            import os
-            env = os.getenv("ENVIRONMENT", "development")
+            env = os.getenv("ENVIRONMENT", "development").lower()
             if env == "production":
+                raise ValueError("SECRET_KEY must be set to a secure value in production.")
+        return v
+
+    @model_validator(mode="after")
+    def production_credentials_must_be_explicit(self):
+        if self.is_production:
+            if self.ADMIN_EMAIL == "yzak" or self.ADMIN_PASSWORD == "0800":
                 raise ValueError(
-                    "SECRET_KEY must be set to a secure value in production."
+                    "ADMIN_EMAIL and ADMIN_PASSWORD must be changed from development defaults in production."
                 )
+            if len(self.ADMIN_PASSWORD) < 12:
+                raise ValueError("ADMIN_PASSWORD must contain at least 12 characters in production.")
+        return self
+
+    @field_validator("ACCESS_TOKEN_EXPIRE_MINUTES")
+    @classmethod
+    def access_token_expiry_must_be_positive(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("ACCESS_TOKEN_EXPIRE_MINUTES must be greater than zero.")
+        return v
+
+    @field_validator("REFRESH_TOKEN_EXPIRE_DAYS")
+    @classmethod
+    def refresh_token_expiry_must_be_positive(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("REFRESH_TOKEN_EXPIRE_DAYS must be greater than zero.")
         return v
 
     @property
