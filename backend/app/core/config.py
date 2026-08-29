@@ -1,9 +1,9 @@
 """
 Application configuration.
-Loads and validates all environment variables using Pydantic BaseSettings.
+Loads and validates environment variables using Pydantic BaseSettings.
 
-In development: values come from backend/.env
-In production:  values come from platform environment variables (Render / Railway)
+Development values may come from backend/.env.
+Production values must be supplied by the hosting environment.
 """
 
 from pydantic import field_validator
@@ -11,26 +11,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # ── Database ──────────────────────────────────────────────────────────
+    # Database
     DATABASE_URL: str
 
-    # ── Security ──────────────────────────────────────────────────────────
+    # Security
     SECRET_KEY: str = "changeme"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # ── CORS ──────────────────────────────────────────────────────────────
-    # For the demo, we allow the specific URLs. 
-    # Ensure no spaces exist between commas.
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001,https://school-managment-system-flax.vercel.app,https://school-managment-system5.vercel.app,https://school-managment-system-git-main-yishak-tule-s-projects.vercel.app,https://hawassa-tabor.vercel.app,https://your-actual-new-domain.vercel.app"
+    # CORS
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
 
-    # ── App ───────────────────────────────────────────────────────────────
+    # Application
     ENVIRONMENT: str = "development"
+    DEMO_SEED_DATA: bool = False
 
-    # ── Default Admin Credentials (hardcoded) ─────────────────────────────
-    # These are the ONLY credentials that work on first launch.
-    # Change these values to your desired admin username/password.
-    # After first login, admin can create all other users inside the app.
+    # Initial administrator credentials.
+    # Development defaults are retained for local setup only.
     ADMIN_EMAIL: str = "yzak"
     ADMIN_PASSWORD: str = "0800"
     ADMIN_FULL_NAME: str = "Tabor Admin"
@@ -44,26 +41,23 @@ class Settings(BaseSettings):
     @field_validator("SECRET_KEY")
     @classmethod
     def secret_key_must_be_set(cls, v: str, info) -> str:
-        """Refuse to start in production with the default placeholder key."""
         if v == "changeme":
             import os
             env = os.getenv("ENVIRONMENT", "development")
             if env == "production":
                 raise ValueError(
-                    "SECRET_KEY must be set to a secure value in production. "
-                    "Generate one with: openssl rand -hex 32"
+                    "SECRET_KEY must be set to a secure value in production."
                 )
         return v
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        """Return ALLOWED_ORIGINS as a Python list."""
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+        """Return configured CORS origins without empty values."""
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     @property
     def is_production(self) -> bool:
-        return self.ENVIRONMENT == "production"
+        return self.ENVIRONMENT.lower() == "production"
 
 
-# Singleton — import this everywhere instead of re-instantiating.
 settings = Settings()
