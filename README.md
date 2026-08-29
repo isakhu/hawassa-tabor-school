@@ -1,80 +1,82 @@
-# EduCore — School Management System
+# Hawassa Tabor Primary and Secondary School — Management System
 
 A full-stack school management platform built with **Next.js 14, TypeScript, FastAPI, SQLAlchemy async, and PostgreSQL**.
 
-## Internship Project
+## School
 
-| | |
-|---|---|
-| **Intern** | Yishak Tule |
-| **Organization** | Sidama Science and Technology Agency |
-| **Location** | Hawassa, Ethiopia |
-| **Field** | Software Engineering |
-| **Project** | EduCore — School Management System |
-| **Development record** | March 2026 – June 2026 |
-
-The repository contains the implementation of EduCore and a separate [`INTERNSHIP_DEVELOPMENT.md`](./INTERNSHIP_DEVELOPMENT.md) document that organizes the project into its four-month internship development phases.
-
-## Live Demo
-- **Backend API:** https://school-managment-system-h7mn.onrender.com
-- **API Docs:** https://school-managment-system-h7mn.onrender.com/docs
-- **Frontend:** Configure the deployed Vercel URL in the environment variables below.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS |
-| Backend | FastAPI, SQLAlchemy (async), PostgreSQL |
-| Authentication | JWT (python-jose) + bcrypt (passlib) |
-| Validation | Pydantic |
-| Hosting | Vercel + Render + Render PostgreSQL |
-| Source control | Git / GitHub |
+**Hawassa Tabor Primary and Secondary School**
 
 ## Core Features
 
 - **Authentication & RBAC** — protected workflows for Admin, Teacher, and Student roles
-- **Admin Dashboard** — system statistics, activity and management actions
+- **Admin Dashboard** — real student, teacher, and class statistics
 - **Student Management** — create, read, update and delete student records
-- **Teacher Management** — teacher records with subject/department information
-- **Class Management** — classes, details and student enrollment
-- **Attendance** — Present/Late/Absent tracking, summaries and reporting
-- **Grades** — grade entry, automatic letter-grade calculation and student reports
-- **Responsive UI** — modern dashboard interface built with Next.js and Tailwind CSS
+- **Teacher Management** — teacher records with subject and department information
+- **Class Management** — classes, details, teacher assignments, and student enrollment
+- **Attendance** — Present/Late/Absent tracking, summaries, and reporting
+- **Grades** — teacher entry, submission, class-head review, approval, and reports
+- **Final Results** — approved-subject final result calculation with PDF download
+- **Responsive UI** — Next.js App Router interface for desktop and mobile
 
 ## Roles
 
 | Role | Access |
 |---|---|
-| Admin | Full system management |
-| Teacher | Manage assigned classes, attendance and grades |
-| Student | View own classes, grades and attendance |
+| **Admin / Manager** | Full system management and academic administration |
+| **Teacher** | Assigned classes, attendance, and grades |
+| **Class Head** | Review/approve assigned class grades and manage class students/attendance |
+| **Student** | Own profile, approved grades, attendance, final result, and PDF |
 
----
+## Result Workflow
 
-## Four-Month Internship Development Structure
+```text
+Subject Teacher
+      ↓
+Enter Grade
+      ↓
+Submit Grade
+      ↓
+Class Head Reviews
+      ↓
+Approve / Return
+      ↓
+All Required Subjects Approved
+      ↓
+Student Final Result
+      ↓
+Download PDF
+```
 
-### March 2026 — Foundation & Architecture
+The final result uses the configured curriculum for the student's grade and academic year. A final result is not released until the required subjects have approved grades.
 
-Database design, PostgreSQL connectivity, asynchronous SQLAlchemy models, user/role modelling, Pydantic schemas and authentication foundation.
+## Final Result PDF
 
-### April 2026 — Core API Development
+The PDF includes:
 
-Student, teacher and class management services, enrollment workflows, role-aware access control, validation and API organization.
+- Hawassa Tabor Primary and Secondary School
+- Student name
+- Student number
+- Grade
+- Section
+- Academic year
+- Every required subject
+- Subject average
+- Subject letter grade
+- Total
+- Overall average
+- Overall grade
 
-### May 2026 — Academic Operations
+The result format is a **high-school result**, not a university GPA calculation.
 
-Attendance, grades, academic business rules, reporting, data aggregation and backend reliability work.
+## Tech Stack
 
-### June 2026 — Frontend, Integration & Deployment
-
-Next.js management interface, dashboard, authentication flow, management pages, academic UI, API integration, responsive refinement and deployment preparation.
-
-> The month structure is a project-development record. Individual Git commits remain the source of truth for specific implementation changes.
-
----
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS |
+| Backend | FastAPI, SQLAlchemy async, Pydantic |
+| Database | PostgreSQL + asyncpg |
+| Authentication | JWT + bcrypt with SHA-256 pre-hashing |
+| Source Control | Git / GitHub |
 
 ## Local Development
 
@@ -82,87 +84,97 @@ Next.js management interface, dashboard, authentication flow, management pages, 
 
 - Node.js 18+
 - Python 3.11+
-- PostgreSQL 14+
+- Access to the PostgreSQL database configured in `backend/.env`
 
 ### Backend
 
-```bash
+From the repository root:
+
+```powershell
 cd backend
 python -m venv venv
-venv\\Scripts\\activate          # Windows
+venv\\Scripts\\activate
 pip install -r requirements.txt
-cp ../.env.example .env
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
+```
+
+Backend runs on:
+
+```text
+http://127.0.0.1:8000
+```
+
+During local development, API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
 ```
 
 ### Frontend
 
-```bash
+In a second terminal:
+
+```powershell
 cd frontend
 npm install
-cp .env.local.example .env.local
 npm run dev
 ```
 
-## Environment Variables
-
-### Backend (`backend/.env`)
+Frontend runs on:
 
 ```text
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/school_db
-SECRET_KEY=your-secret-key-min-32-chars
-ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
-ENVIRONMENT=development
+http://localhost:3000
 ```
 
-### Frontend (`frontend/.env.local`)
+Set the frontend API endpoint with:
 
 ```text
-NEXT_PUBLIC_API_URL=https://school-managment-system-h7mn.onrender.com/api/v1
-NEXT_PUBLIC_APP_NAME=EduCore
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
 ```
 
----
+Do not commit `.env`, `.env.local`, or other secret files.
 
-## Deployment
+## Manager Demo Account
 
-### Backend → Render
+For the local/demo environment the configured manager account is:
 
-1. Connect the repository to Render.
-2. Set the root directory to `backend`.
-3. Build with `pip install -r requirements.txt`.
-4. Start with `uvicorn main:app --host 0.0.0.0 --port $PORT`.
-5. Configure the required environment variables.
+```text
+Username: yzak
+Password: 0800
+```
 
-### Frontend → Vercel
-
-1. Import the repository into Vercel.
-2. Set the root directory to `frontend`.
-3. Configure `NEXT_PUBLIC_API_URL`.
-4. Deploy and verify the production API connection.
-
----
+Passwords are treated as digit strings so values such as `0800` keep their leading zeros.
 
 ## Project Structure
 
 ```text
-school-management-system/
+hawassa-tabor-school/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/       auth, students, teachers, classes, attendance, grades
-│   │   ├── core/             config, database, security
-│   │   ├── models/           SQLAlchemy ORM models
-│   │   ├── schemas/          Pydantic schemas
-│   │   └── utils/            grading utilities
+│   │   ├── api/routes/
+│   │   ├── core/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── services/
+│   │   └── utils/
 │   ├── main.py
 │   └── requirements.txt
-└── frontend/
-    ├── app/                  Next.js App Router pages
-    ├── components/           reusable UI components
-    └── lib/                  API, authentication and constants
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   └── lib/
+└── docs/
 ```
 
-## Documentation
+## Deployment
 
-- [`INTERNSHIP_DEVELOPMENT.md`](./INTERNSHIP_DEVELOPMENT.md) — four-month internship development record
-- Backend API documentation — available from the deployed FastAPI `/docs` endpoint
+Deployment configuration is intentionally kept separate from the application source. The repository no longer contains the old Render service blueprint, Render keep-alive workflow, or Render Procfile.
+
+For a fresh deployment, configure the hosting platform's environment variables explicitly rather than relying on a stale deployment URL stored in the codebase.
+
+## Development Documentation
+
+- `INTERNSHIP_DEVELOPMENT.md` — internship development record
+- `docs/requirements/` — functional and non-functional requirements
+- `docs/architecture/` — system architecture and workflow
+- `docs/testing/` — testing strategy
