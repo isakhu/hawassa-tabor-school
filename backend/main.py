@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import random
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
@@ -58,7 +58,7 @@ async def seed_admin():
             )
         )
         await session.commit()
-        print(f"🚀 Initial admin created: {settings.ADMIN_EMAIL}")
+        print(f"Initial admin created: {settings.ADMIN_EMAIL}")
 
 
 async def seed_demo_data_task():
@@ -69,14 +69,14 @@ async def seed_demo_data_task():
         await create_all_tables()
         await seed_admin()
     except Exception as exc:
-        print(f"❌ Initial database setup failed: {exc}")
+        print(f"Initial database setup failed: {exc}")
         return
 
     if not settings.DEMO_SEED_DATA:
-        print("ℹ️ Demo data seeding disabled.")
+        print("Demo data seeding disabled.")
         return
 
-    print("⏳ Starting optional demo data seeding...")
+    print("Starting optional demo data seeding...")
     from sqlalchemy import select, func
     from app.core.database import AsyncSessionLocal
     from app.core.security import hash_password
@@ -116,12 +116,12 @@ async def seed_demo_data_task():
         teacher_result = await session.execute(select(Teacher))
         teachers = teacher_result.scalars().all()
         if not teachers:
-            print("⚠️ Demo seed skipped: no teachers available.")
+            print("Demo seed skipped: no teachers available.")
             return
 
         existing_students = await session.execute(select(func.count(Student.id)))
         if existing_students.scalar() >= 1500:
-            print("✅ Demo data already exists.")
+            print("Demo data already exists.")
             return
 
         grades_config = {
@@ -188,13 +188,11 @@ async def seed_demo_data_task():
 
                 await session.commit()
 
-    print("🚀 Demo data seeding complete.")
+    print("Demo data seeding complete.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Keep startup lightweight while allowing Render/Uvicorn to bind quickly.
-    # Production never receives the large demo dataset unless explicitly enabled.
     asyncio.create_task(seed_demo_data_task())
     yield
     await engine.dispose()
@@ -213,8 +211,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 app.include_router(auth_router, prefix="/api/v1")
@@ -227,7 +225,7 @@ app.include_router(grades_router, prefix="/api/v1")
 
 @app.get("/", tags=["Root"])
 def read_root() -> dict:
-    return {"message": "School Management System API"}
+    return {"message": "School Management System API", "version": app.version}
 
 
 @app.get("/health", tags=["Health"])
@@ -244,5 +242,5 @@ async def db_health_check() -> dict:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
-    except Exception as exc:
-        return {"status": "error", "database": "unreachable", "detail": str(exc)}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database is unavailable")
