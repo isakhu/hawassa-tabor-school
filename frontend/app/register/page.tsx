@@ -1,213 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-// ─── Mesh background ──────────────────────────────────────────────────────────
-function MeshBackground() {
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        overflow: "hidden",
-        pointerEvents: "none",
-        zIndex: 0,
-      }}
-    >
-      <div
-        className="animate-blob-1"
-        style={{
-          position: "absolute",
-          top: "5%",
-          right: "10%",
-          width: 500,
-          height: 500,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)",
-          filter: "blur(65px)",
-        }}
-      />
-      <div
-        className="animate-blob-2"
-        style={{
-          position: "absolute",
-          bottom: "10%",
-          left: "5%",
-          width: 450,
-          height: 450,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(139,92,246,0.28) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-      <div
-        className="animate-blob-3"
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          width: 350,
-          height: 350,
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(236,72,153,0.2) 0%, transparent 70%)",
-          filter: "blur(55px)",
-        }}
-      />
-    </div>
-  );
-}
-
-function LogoMark({ size = 40 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      <defs>
-        <linearGradient id="lg2" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="#6366f1" />
-          <stop offset="50%"  stopColor="#8b5cf6" />
-          <stop offset="100%" stopColor="#ec4899" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z"
-        fill="url(#lg2)"
-        opacity="0.15"
-      />
-      <path
-        d="M24 4L6 12V26C6 35.4 14.2 44.2 24 46C33.8 44.2 42 35.4 42 26V12L24 4Z"
-        stroke="url(#lg2)"
-        strokeWidth="2"
-        fill="none"
-      />
-      <path
-        d="M17 24L22 29L31 19"
-        stroke="url(#lg2)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
   return (
-    <>
-      <MeshBackground />
-
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 20px",
-          opacity: mounted ? 1 : 0,
-          transform: mounted ? "translateY(0)" : "translateY(20px)",
-          transition: "opacity 0.5s ease, transform 0.5s ease",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: 460 }}>
-          {/* Brand */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 28,
-              justifyContent: "center",
-            }}
-          >
-            <LogoMark size={36} />
-            <span
-              style={{
-                fontFamily: "var(--font-syne)",
-                fontSize: 24,
-                fontWeight: 800,
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              EduCore
-            </span>
+    <main className="min-h-screen bg-[#f4f8fc] px-5 py-8 text-[#10243e] sm:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-3xl items-center justify-center">
+        <div className="w-full max-w-lg rounded-[24px] border border-[#d8e3ef] bg-white p-7 text-center shadow-[0_24px_70px_rgba(20,52,90,0.10)] sm:p-10">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1267e8] text-white shadow-[0_10px_24px_rgba(18,103,232,0.22)]" aria-hidden="true">
+            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z" />
+              <path d="M6 10.5v5L12 19l6-3.5v-5" />
+            </svg>
           </div>
 
-          {/* Card */}
-          <div className="glass-card" style={{ padding: "48px 32px", textAlign: "center" }}>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#0b1f3a] sm:text-4xl">
+            Hawassa Tabor Primary and Secondary School
+          </h1>
 
-            {/* Lock icon */}
-            <div style={{ fontSize: 56, marginBottom: 20 }}>🔒</div>
-
-            <h2
-              style={{
-                fontFamily: "var(--font-syne)",
-                fontSize: 26,
-                fontWeight: 700,
-                marginBottom: 12,
-              }}
-            >
-              <span className="gradient-text">Registration Closed</span>
-            </h2>
-
-            <p style={{ color: "#6b6b80", fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
-              Account creation is managed by your school administrator.
-              <br />
-              Please contact your admin to get access to EduCore.
-            </p>
-
-            {/* Info box */}
-            <div
-              style={{
-                padding: "16px 20px",
-                background: "rgba(99,102,241,0.08)",
-                border: "1px solid rgba(99,102,241,0.25)",
-                borderRadius: 12,
-                marginBottom: 32,
-                fontSize: 14,
-                color: "#a5b4fc",
-                lineHeight: 1.6,
-              }}
-            >
-              📧 Ask your admin to create an account for you inside the app.
-              <br />
-              You will receive your login credentials directly.
+          <div className="mx-auto mt-8 max-w-md rounded-2xl border border-[#dbe5f0] bg-[#f7fafe] p-6">
+            <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf2ff] text-[#1267e8]">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="4" y="10" width="16" height="10" rx="2" />
+                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+              </svg>
             </div>
-
-            {/* Back to login */}
-            <Link
-              href="/login"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "13px 32px",
-                borderRadius: 12,
-                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                color: "#fff",
-                fontFamily: "var(--font-syne)",
-                fontWeight: 600,
-                fontSize: 15,
-                textDecoration: "none",
-                letterSpacing: "0.02em",
-                transition: "opacity 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              ← Back to Login
-            </Link>
+            <h2 className="text-xl font-bold text-[#0b1f3a]">Sign Up</h2>
+            <p className="mt-3 text-sm leading-6 text-[#71849a]">
+              New accounts are created by the school administrator.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#71849a]">
+              Please contact the administrator to receive your login credentials.
+            </p>
           </div>
+
+          <Link href="/login" className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-[#1267e8] px-4 py-3.5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(18,103,232,0.18)] transition hover:bg-[#0f56c7]">
+            Back to Log In
+          </Link>
         </div>
       </div>
-    </>
+    </main>
   );
 }
