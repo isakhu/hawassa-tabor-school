@@ -75,6 +75,12 @@ aside nav a[style*="linear-gradient"] > div { background: #1267e8 !important; bo
 aside button { color: #71849a !important; }
 aside button:hover { background: #fff3f3 !important; color: #b63c3c !important; }
 
+/* Keep the full application palette blue/white even where older inline styles remain. */
+aside .gradient-text { background: linear-gradient(135deg, #0e58c7, #1e7cf0) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+aside [style*="rgba(99,102,241"] { background: #f7fafe !important; border-color: #dbe5f0 !important; }
+aside [style*="#6366f1"], aside [style*="#8b5cf6"], aside [style*="#ec4899"] { color: #1267e8 !important; }
+aside [style*="linear-gradient(135deg,#6366f1,#ec4899)"] { background: #1267e8 !important; }
+
 /* Legacy inline styling on management screens: keep the layout, normalize the palette. */
 input, select, textarea { color-scheme: light; }
 input::placeholder, textarea::placeholder { color: #93a4b8; opacity: 1; }
