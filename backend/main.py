@@ -1,10 +1,7 @@
-"""
-School Management System - FastAPI Application Entry Point
-Run with: uvicorn main:app --reload
-"""
+"""School Management System - FastAPI application entry point."""
 from contextlib import asynccontextmanager
-import random
 import asyncio
+import random
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -18,6 +15,7 @@ from app.api.routes.attendance import router as attendance_router
 from app.api.routes.grades import router as grades_router
 from app.api.routes.academic import router as academic_router
 from app.api.routes.grade_workflow import router as grade_workflow_router
+from app.api.routes.teacher_dashboard import router as teacher_dashboard_router
 
 async def seed_admin():
     from sqlalchemy import select
@@ -26,18 +24,17 @@ async def seed_admin():
     from app.models.user import User, Role
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(User).where(User.email == settings.ADMIN_EMAIL))
-        existing_admin = result.scalar_one_or_none()
-        if existing_admin:
-            updated = False
-            if existing_admin.full_name != settings.ADMIN_FULL_NAME:
-                existing_admin.full_name = settings.ADMIN_FULL_NAME; updated = True
-            if not verify_password(settings.ADMIN_PASSWORD, existing_admin.password_hash):
-                existing_admin.password_hash = hash_password(settings.ADMIN_PASSWORD); updated = True
-            if updated: await session.commit()
+        existing = result.scalar_one_or_none()
+        if existing:
+            changed = False
+            if existing.full_name != settings.ADMIN_FULL_NAME:
+                existing.full_name = settings.ADMIN_FULL_NAME; changed = True
+            if not verify_password(settings.ADMIN_PASSWORD, existing.password_hash):
+                existing.password_hash = hash_password(settings.ADMIN_PASSWORD); changed = True
+            if changed: await session.commit()
             return
         session.add(User(full_name=settings.ADMIN_FULL_NAME, email=settings.ADMIN_EMAIL, password_hash=hash_password(settings.ADMIN_PASSWORD), role=Role.ADMIN, is_active=True))
         await session.commit()
-        print(f"Initial admin created: {settings.ADMIN_EMAIL}")
 
 async def seed_demo_data_task():
     await asyncio.sleep(5)
@@ -45,9 +42,7 @@ async def seed_demo_data_task():
         await create_all_tables(); await seed_admin()
     except Exception as exc:
         print(f"Initial database setup failed: {exc}"); return
-    if not settings.DEMO_SEED_DATA:
-        print("Demo data seeding disabled."); return
-    print("Starting optional demo data seeding...")
+    if not settings.DEMO_SEED_DATA: return
     from sqlalchemy import select, func
     from app.core.database import AsyncSessionLocal
     from app.core.security import hash_password
@@ -59,58 +54,55 @@ async def seed_demo_data_task():
     from app.utils.grading import calculate_grade_letter
     subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "History", "Geography", "Civics", "ICT"]
     async with AsyncSessionLocal() as session:
-        existing_teachers = await session.execute(select(func.count(Teacher.id)))
-        if existing_teachers.scalar() < 70:
+        count = await session.scalar(select(func.count(Teacher.id)))
+        if (count or 0) < 70:
             for i in range(1, 71):
                 user = User(full_name=f"Teacher {i}", email=f"teacher{i}", password_hash=hash_password("password"), role=Role.TEACHER)
                 session.add(user); await session.flush()
                 session.add(Teacher(user_id=user.id, teacher_number=f"TCH-{i:03d}", subject_specialization=random.choice(subjects)))
             await session.commit()
-        teacher_result = await session.execute(select(Teacher)); teachers = teacher_result.scalars().all()
+        teachers = (await session.execute(select(Teacher))).scalars().all()
         if not teachers: return
-        existing_students = await session.execute(select(func.count(Student.id)))
-        if existing_students.scalar() >= 1500: return
-        grades_config = {9: {"sections": ["A", "B", "C", "D", "E"], "per_section": 60}, 10: {"sections": ["A", "B", "C", "D", "E"], "per_section": 80}, 11: {"sections": ["A", "B", "C", "D", "E"], "per_section": 80}, 12: {"sections": ["A", "B", "C", "D", "E"], "per_section": 80}}
-        for grade, config in grades_config.items():
-            for section_letter in config["sections"]:
+        student_count = await session.scalar(select(func.count(Student.id)))
+        if (student_count or 0) >= 1500: return
+        grades_config = {9: ("ABCDE", 60), 10: ("ABCDE", 80), 11: ("ABCDE", 80), 12: ("ABCDE", 80)}
+        for grade, (sections, per_section) in grades_config.items():
+            for section in sections:
                 section_info = []
                 for subject in subjects:
-                    assigned_teacher = random.choice(teachers)
-                    school_class = SchoolClass(class_name=f"Grade {grade}{section_letter} - {subject}", grade_level=str(grade), section=section_letter, teacher_id=assigned_teacher.id, academic_year="2024-2025")
-                    session.add(school_class); await session.flush(); section_info.append((school_class.id, assigned_teacher.user_id))
-                for i in range(1, config["per_section"] + 1):
-                    username = f"{grade}th{section_letter}{i}"
+                    teacher = random.choice(teachers)
+                    school_class = SchoolClass(class_name=f"Grade {grade}{section} - {subject}", grade_level=str(grade), section=section, teacher_id=teacher.id, academic_year="2024-2025")
+                    session.add(school_class); await session.flush(); section_info.append((school_class.id, teacher.user_id))
+                for i in range(1, per_section + 1):
+                    username = f"{grade}th{section}{i}"
                     user = User(full_name=f"Student {username}", email=username, password_hash=hash_password(str(i)), role=Role.STUDENT)
                     session.add(user); await session.flush()
-                    student = Student(user_id=user.id, student_number=f"STU-{username}", grade_level=str(grade), section=section_letter)
+                    student = Student(user_id=user.id, student_number=f"STU-{username}", grade_level=str(grade), section=section)
                     session.add(student); await session.flush()
                     for class_id, teacher_user_id in section_info:
                         session.add(ClassEnrollment(class_id=class_id, student_id=student.id))
                         score = round(random.uniform(45, 100), 2)
                         session.add(Grade(student_id=student.id, class_id=class_id, graded_by=teacher_user_id, assessment_type=AssessmentType.EXAM, term="Term 1", score=score, max_score=100, grade_letter=calculate_grade_letter(score)))
                 await session.commit()
-    print("Demo data seeding complete.")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    asyncio.create_task(seed_demo_data_task()); yield; await engine.dispose()
+    asyncio.create_task(seed_demo_data_task())
+    yield
+    await engine.dispose()
 
-app = FastAPI(title="School Management System API", description="Backend API for managing students, teachers, classes, grades, and attendance.", version="1.0.0", lifespan=lifespan, docs_url="/docs" if not settings.is_production else None, redoc_url="/redoc" if not settings.is_production else None)
+app = FastAPI(title="School Management System API", description="Backend API for students, teachers, classes, grades, attendance, and academic administration.", version="1.0.0", lifespan=lifespan, docs_url="/docs" if not settings.is_production else None, redoc_url="/redoc" if not settings.is_production else None)
 app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins_list, allow_credentials=True, allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allow_headers=["Authorization", "Content-Type"])
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(students_router, prefix="/api/v1")
-app.include_router(teachers_router, prefix="/api/v1")
-app.include_router(classes_router, prefix="/api/v1")
-app.include_router(attendance_router, prefix="/api/v1")
-app.include_router(grades_router, prefix="/api/v1")
-app.include_router(academic_router, prefix="/api/v1")
-app.include_router(grade_workflow_router, prefix="/api/v1")
+for router in (auth_router, students_router, teachers_router, classes_router, attendance_router, grades_router, academic_router, grade_workflow_router, teacher_dashboard_router):
+    app.include_router(router, prefix="/api/v1")
 
 @app.get("/", tags=["Root"])
-def read_root() -> dict: return {"message": "School Management System API", "version": app.version}
+def read_root() -> dict:
+    return {"message": "School Management System API", "version": app.version}
 
 @app.get("/health", tags=["Health"])
-def health_check() -> dict: return {"status": "ok"}
+def health_check() -> dict:
+    return {"status": "ok"}
 
 @app.get("/db-health", tags=["Health"])
 async def db_health_check() -> dict:
