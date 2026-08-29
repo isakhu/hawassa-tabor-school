@@ -1,8 +1,10 @@
 // ─── API ─────────────────────────────────────────────────────────────────────
 
+// Local development uses FastAPI on port 8000. A deployment can provide
+// NEXT_PUBLIC_API_URL explicitly; there is no stale hosting URL fallback.
 export const API_BASE_URL =
-  (process.env.NEXT_PUBLIC_API_URL as string) ||
-  "https://school-managment-system-h7mn.onrender.com/api/v1";
+  (process.env.NEXT_PUBLIC_API_URL as string)?.replace(/\/$/, "") ||
+  "http://127.0.0.1:8000/api/v1";
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
