@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev frontend",
-    "build": "next build frontend",
+    "build": "next build frontend && node scripts/prepare-vercel-output.js",
     "start": "next start frontend",
     "lint": "next lint"
   },
