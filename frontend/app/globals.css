@@ -98,7 +98,9 @@ button { -webkit-tap-highlight-color: transparent; }
   background-clip: text;
 }
 
-/* Dashboard shell */
+/* Fixed application shell */
+html, body { overflow: hidden; }
+
 aside {
   background: #fff !important;
   border-right: 1px solid #dbe5f0 !important;
@@ -108,29 +110,13 @@ aside > div { background: #fff !important; }
 aside nav p { color: #8092a6 !important; }
 aside nav a { color: #647991 !important; background: transparent !important; }
 aside nav a:hover { background: #f3f7fc !important; color: #173653 !important; }
-aside nav a[style*="linear-gradient"] { background: #eaf2ff !important; color: #0f56c7 !important; box-shadow: inset 3px 0 0 #1267e8 !important; }
-aside nav a span { color: #7890a7 !important; }
-aside nav a[style*="linear-gradient"] span { color: #1267e8 !important; }
-aside nav a > div { background: transparent !important; box-shadow: none !important; }
-aside nav a[style*="linear-gradient"] > div { background: #1267e8 !important; box-shadow: none !important; }
-aside button { color: #71849a !important; }
+aside nav a span { color: inherit !important; }
 aside button:hover { background: #fff3f3 !important; color: #b63c3c !important; }
-aside .gradient-text { background: linear-gradient(135deg, #0e58c7, #1e7cf0) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
-aside [style*="rgba(99,102,241"] { background: #f7fafe !important; border-color: #dbe5f0 !important; }
-aside [style*="#6366f1"], aside [style*="#8b5cf6"], aside [style*="#ec4899"] { color: #1267e8 !important; }
-aside [style*="linear-gradient(135deg,#6366f1,#ec4899)"] { background: #1267e8 !important; }
 
-/* Normalize legacy management screens to the same light product surface. */
-main .glass-card,
-main .card,
-main .surface-card { color: #10243e; }
-main .glass-card [style*="#e8e8f0"],
-main .glass-card [style*="#9898b0"],
-main .glass-card [style*="#6b6b80"] { color: #10243e !important; }
-main .glass-card [style*="#9898b0"],
-main .glass-card [style*="#6b6b80"] { color: #6f8299 !important; }
-main .glass-card [style*="rgba(19,19,26"],
-main [style*="rgba(19,19,26"] { background: #fff !important; }
+/* Normalize legacy management screens to the same light surface. */
+main { color: var(--text); }
+main .glass-card, main .card, main .surface-card { color: #10243e; }
+main [style*="rgba(19,19,26"], main [style*="#08080f"], main [style*="#0b0b12"], main [style*="#13131a"] { background: #fff !important; }
 main [style*="rgba(255,255,255,0.04)"],
 main [style*="rgba(255,255,255,0.05)"],
 main [style*="rgba(99,102,241,0.06)"],
@@ -140,8 +126,6 @@ main [style*="rgba(99,102,241,0.12)"],
 main [style*="rgba(99,102,241,0.15)"],
 main [style*="rgba(139,92,246,0.12)"],
 main [style*="rgba(139,92,246,0.15)"] { background: #eef4ff !important; }
-main [style*="rgba(99,102,241,0.2)"],
-main [style*="rgba(139,92,246,0.2)"] { border-color: #cfe0f7 !important; }
 main [style*="rgba(255,255,255,0.08)"],
 main [style*="rgba(255,255,255,0.1)"] { border-color: #dbe5f0 !important; }
 main input, main select, main textarea {
@@ -150,16 +134,23 @@ main input, main select, main textarea {
   border-color: #cfdae7 !important;
 }
 main input::placeholder, main textarea::placeholder { color: #93a4b8 !important; opacity: 1; }
-main [style*="color: #e8e8f0"],
-main [style*="color:#e8e8f0"] { color: #10243e !important; }
-main [style*="color: #9898b0"],
-main [style*="color:#9898b0"],
-main [style*="color: #6b6b80"],
-main [style*="color:#6b6b80"] { color: #6f8299 !important; }
-main [style*="color: #818cf8"],
-main [style*="color:#818cf8"],
-main [style*="color: #a78bfa"],
-main [style*="color:#a78bfa"] { color: #1267e8 !important; }
+main [style*="color: #e8e8f0"], main [style*="color:#e8e8f0"] { color: #10243e !important; }
+main [style*="color: #9898b0"], main [style*="color:#9898b0"],
+main [style*="color: #6b6b80"], main [style*="color:#6b6b80"] { color: #6f8299 !important; }
+main [style*="color: #818cf8"], main [style*="color:#818cf8"],
+main [style*="color: #a78bfa"], main [style*="color:#a78bfa"] { color: #1267e8 !important; }
+
+/* Management form labels */
+[role="dialog"] label { color: #536b83 !important; font-weight: 600 !important; }
+[role="dialog"] input, [role="dialog"] select, [role="dialog"] textarea {
+  color: #10243e !important;
+  background: #fff !important;
+  border: 1px solid #cfdae7 !important;
+}
+[role="dialog"] input:focus, [role="dialog"] select:focus, [role="dialog"] textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(18,103,232,0.12) !important;
+}
 
 .educore-loader { display: inline-flex; gap: 6px; align-items: center; }
 .educore-loader span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: loaderPulse 1s ease-in-out infinite; }
