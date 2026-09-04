@@ -47,8 +47,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar user={user} />
       <TopBar title={pageTitle(pathname)} user={user} />
 
-      <main className="ml-[260px] h-[calc(100dvh-72px)] overflow-hidden pt-[72px] max-lg:ml-0">
-        <div className="h-full w-full p-5 sm:p-6 lg:p-7">
+      <main className="ml-[260px] h-dvh overflow-hidden pt-[72px] max-lg:ml-0">
+        <div className="h-full w-full overflow-hidden p-5 sm:p-6 lg:p-7">
           {children}
         </div>
       </main>
