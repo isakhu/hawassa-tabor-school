@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE_URL } from "@/lib/constants";
+import { post } from "@/lib/api";
 import { saveToken, saveUser, dashboardForRole } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -52,6 +52,11 @@ export default function LoginPage() {
   );
 }
 
+interface LoginResponse {
+  access_token: string;
+  user: Parameters<typeof saveUser>[0];
+}
+
 function LoginContent() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -67,13 +72,15 @@ function LoginContent() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ login_id: username.trim(), password }),
+      const data = await post<LoginResponse>("/auth/login", {
+        login_id: username.trim(),
+        password,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(typeof data?.detail === "string" ? data.detail : "Invalid email or password.");
+
+      if (!data?.access_token || !data?.user) {
+        throw new Error("The server returned an invalid login response.");
+      }
+
       saveToken(data.access_token);
       saveUser(data.user);
       router.push(dashboardForRole(data.user.role));
