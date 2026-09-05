@@ -9,7 +9,6 @@ import DataTable, { Column } from "@/components/DataTable";
 import Modal from "@/components/Modal";
 import { ToastProvider, useToast } from "@/components/Toast";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Student {
   id: string;
   user_id: string;
@@ -17,60 +16,86 @@ interface Student {
   grade_level: string;
   section: string;
   user?: { full_name: string; email: string; role: string };
-  // flattened for table
   full_name?: string;
   email?: string;
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
 function Avatar({ name }: { name: string }) {
-  const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const initials = name.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "var(--font-syne)", flexShrink: 0 }}>
-      {initials}
+    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1267e8] text-xs font-bold text-white shadow-xs">
+      {initials || "ST"}
     </div>
   );
 }
 
-// ─── Confirm dialog ───────────────────────────────────────────────────────────
-function ConfirmModal({ open, onClose, onConfirm, name }: { open: boolean; onClose: () => void; onConfirm: () => void; name: string }) {
+function ConfirmModal({
+  open,
+  onClose,
+  onConfirm,
+  name,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  name: string;
+}) {
   return (
-    <Modal open={open} onClose={onClose} title="Confirm Delete" maxWidth={380}>
-      <p style={{ color: "#9898b0", fontSize: 14, marginBottom: 20 }}>
-        Are you sure you want to delete <strong style={{ color: "#e8e8f0" }}>{name}</strong>? This action cannot be undone.
+    <Modal open={open} onClose={onClose} title="Confirm Deletion" maxWidth={400}>
+      <p className="text-sm text-[#475569]">
+        Are you sure you want to remove <strong className="text-[#0f172a]">{name}</strong> from enrolled students? This action cannot be reversed.
       </p>
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <button onClick={onClose} style={{ padding: "9px 18px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#9898b0", cursor: "pointer", fontSize: 14 }}>Cancel</button>
-        <button onClick={onConfirm} style={{ padding: "9px 18px", borderRadius: 8, background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Delete</button>
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          onClick={onClose}
+          className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          className="rounded-xl bg-[#dc2626] px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-[#b91c1c]"
+        >
+          Confirm Delete
+        </button>
       </div>
     </Modal>
   );
 }
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-const inputSt: React.CSSProperties = { width: "100%", padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, color: "#e8e8f0", fontSize: 14, fontFamily: "var(--font-dm-sans)", outline: "none", transition: "border-color 0.2s, box-shadow 0.2s" };
-
-// ─── Main content ─────────────────────────────────────────────────────────────
 function StudentsContent() {
-  const router  = useRouter();
-  const user    = getUser();
-  const toast   = useToast();
+  const router = useRouter();
+  const user = getUser();
+  const toast = useToast();
   const isAdmin = user?.role === ROLES.ADMIN;
 
-  const [students, setStudents]         = useState<Student[]>([]);
-  const [loading,  setLoading]          = useState(true);
-  const [search,   setSearch]           = useState("");
-  const [modalOpen, setModalOpen]       = useState(false);
-  const [editing,   setEditing]         = useState<Student | null>(null);
-  const [delTarget, setDelTarget]       = useState<Student | null>(null);
-  const [saving,    setSaving]          = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Student | null>(null);
+  const [delTarget, setDelTarget] = useState<Student | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  // Form state
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", student_number: "", grade_level: "", section: "", user_id: "" });
+  const [form, setForm] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    student_number: "",
+    grade_level: "",
+    section: "",
+    user_id: "",
+  });
 
   useEffect(() => {
-    if (!user) { router.replace("/login"); return; }
-    if (user.role === ROLES.STUDENT) { router.replace(dashboardForRole(user.role)); return; }
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    if (user.role === ROLES.STUDENT) {
+      router.replace(dashboardForRole(user.role));
+      return;
+    }
     loadStudents();
   }, []);
 
@@ -78,10 +103,14 @@ function StudentsContent() {
     setLoading(true);
     try {
       const data = await get<Student[]>("/students");
-      const flat = data.map((s) => ({ ...s, full_name: s.user?.full_name ?? "—", email: s.user?.email ?? "—" }));
+      const flat = (Array.isArray(data) ? data : []).map((s) => ({
+        ...s,
+        full_name: s.user?.full_name ?? "—",
+        email: s.user?.email ?? "—",
+      }));
       setStudents(flat);
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Failed to load students.", "error");
     } finally {
       setLoading(false);
     }
@@ -89,13 +118,29 @@ function StudentsContent() {
 
   function openAdd() {
     setEditing(null);
-    setForm({ full_name: "", email: "", password: "", student_number: "", grade_level: "", section: "", user_id: "" });
+    setForm({
+      full_name: "",
+      email: "",
+      password: "",
+      student_number: "",
+      grade_level: "Grade 10",
+      section: "A",
+      user_id: "",
+    });
     setModalOpen(true);
   }
 
   function openEdit(s: Student) {
     setEditing(s);
-    setForm({ full_name: s.full_name ?? "", email: s.email ?? "", password: "", student_number: s.student_number, grade_level: s.grade_level, section: s.section, user_id: s.user_id });
+    setForm({
+      full_name: s.full_name ?? "",
+      email: s.email ?? "",
+      password: "",
+      student_number: s.student_number,
+      grade_level: s.grade_level,
+      section: s.section,
+      user_id: s.user_id,
+    });
     setModalOpen(true);
   }
 
@@ -104,19 +149,33 @@ function StudentsContent() {
     setSaving(true);
     try {
       if (editing) {
-        await put(`/students/${editing.id}`, { grade_level: form.grade_level, section: form.section });
+        await put(`/students/${editing.id}`, {
+          grade_level: form.grade_level,
+          section: form.section,
+        });
         toast.showToast("Student updated successfully!", "success");
       } else {
-        // 1. Create user account first
-        const newUser = await post<any>("/auth/register", { full_name: form.full_name, email: form.email, password: form.password, role: "STUDENT" });
-        // 2. Create student profile
-        await post("/students", { user_id: newUser.id, student_number: form.student_number, grade_level: form.grade_level, section: form.section });
-        toast.showToast("Student added successfully!", "success");
+        if (!/^\d+$/.test(form.password)) {
+          throw new Error("Password must contain digits only (numeric PIN).");
+        }
+        const newUser = await post<any>("/auth/register", {
+          full_name: form.full_name,
+          email: form.email,
+          password: form.password,
+          role: "STUDENT",
+        });
+        await post("/students", {
+          user_id: newUser.id,
+          student_number: form.student_number,
+          grade_level: form.grade_level,
+          section: form.section,
+        });
+        toast.showToast("Student enrolled successfully!", "success");
       }
       setModalOpen(false);
       loadStudents();
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Operation failed.", "error");
     } finally {
       setSaving(false);
     }
@@ -126,109 +185,278 @@ function StudentsContent() {
     if (!delTarget) return;
     try {
       await del(`/students/${delTarget.id}`);
-      toast.showToast("Student deleted.", "success");
+      toast.showToast("Student removed.", "success");
       setDelTarget(null);
       loadStudents();
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Delete failed.", "error");
     }
   }
 
-  // ─── Table columns ──────────────────────────────────────────────────────────
   const columns: Column<Student>[] = [
     {
-      key: "avatar", label: "", width: 50,
+      key: "avatar",
+      label: "",
+      width: 48,
       render: (s) => <Avatar name={s.full_name ?? "?"} />,
     },
-    { key: "full_name",      label: "Full Name",   render: (s) => <span style={{ fontWeight: 600, color: "#e8e8f0" }}>{s.full_name}</span> },
-    { key: "email",          label: "Email",       render: (s) => <span style={{ color: "#9898b0" }}>{s.email}</span> },
-    { key: "student_number", label: "Student ID" },
     {
-      key: "actions", label: "Actions", width: 100,
-      render: (s) => isAdmin ? (
-        <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => openEdit(s)} title="Edit" style={{ padding: "6px 10px", borderRadius: 7, background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.25)", color: "#818cf8", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.25)")} onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.12)")}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-          </button>
-          <button onClick={() => setDelTarget(s)} title="Delete" style={{ padding: "6px 10px", borderRadius: 7, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.2)")} onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.1)")}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-          </button>
+      key: "full_name",
+      label: "Full Name",
+      render: (s) => (
+        <div>
+          <span className="font-bold text-[#0f172a]">{s.full_name}</span>
+          <p className="text-[11px] text-[#64748b] sm:hidden">{s.student_number}</p>
         </div>
-      ) : <span style={{ color: "#6b6b80", fontSize: 12 }}>View only</span>,
+      ),
+    },
+    {
+      key: "email",
+      label: "Email Address",
+      render: (s) => <span className="text-[#475569]">{s.email}</span>,
+    },
+    {
+      key: "student_number",
+      label: "Student ID",
+      render: (s) => (
+        <span className="font-mono text-xs font-semibold text-[#1267e8]">
+          {s.student_number}
+        </span>
+      ),
+    },
+    {
+      key: "grade_level",
+      label: "Grade / Section",
+      render: (s) => (
+        <span className="rounded-md bg-[#f1f5f9] px-2 py-0.5 text-xs font-bold text-[#334155]">
+          {s.grade_level} • Sec {s.section}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      width: 100,
+      render: (s) =>
+        isAdmin ? (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => openEdit(s)}
+              title="Edit Record"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#1267e8] transition hover:bg-[#eaf2ff]"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setDelTarget(s)}
+              title="Delete Record"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#fecaca] bg-white text-[#dc2626] transition hover:bg-[#fef2f2]"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14H6L5 6" />
+                <path d="M10 11v6M14 11v6" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <span className="text-xs text-[#94a3b8]">View only</span>
+        ),
     },
   ];
 
   return (
-    <div className="animate-page-in">
+    <div className="space-y-6">
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 style={{ fontFamily: "var(--font-syne)", fontSize: 24, fontWeight: 800, color: "#e8e8f0" }}>Students</h2>
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-black tracking-tight text-[#0b1f3a] sm:text-2xl">
+              Enrolled Students
+            </h1>
             {!loading && (
-              <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)", fontSize: 12, fontWeight: 700, color: "#818cf8" }}>
-                {students.length}
+              <span className="rounded-full bg-[#eaf2ff] px-2.5 py-0.5 text-xs font-bold text-[#1267e8]">
+                {students.length} Total
               </span>
             )}
           </div>
-          <p style={{ color: "#6b6b80", fontSize: 13, marginTop: 2 }}>Manage enrolled students</p>
+          <p className="mt-1 text-xs text-[#64748b]">
+            Manage student registrations, classroom allocations, and login profiles.
+          </p>
         </div>
-        {/* Search */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 10, minWidth: 220 }}>
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#6b6b80" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          <input placeholder="Search students…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ background: "transparent", border: "none", outline: "none", color: "#e8e8f0", fontSize: 13, width: "100%", fontFamily: "var(--font-dm-sans)" }} />
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="flex items-center gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3 py-2 text-xs">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth={2}>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              placeholder="Filter by name, ID…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent text-[#0f172a] placeholder-[#94a3b8] outline-none"
+            />
+          </div>
+
+          {isAdmin && (
+            <button
+              onClick={openAdd}
+              className="shimmer-btn rounded-xl px-4 py-2 text-xs font-bold shadow-sm"
+            >
+              + Enroll Student
+            </button>
+          )}
         </div>
-        {isAdmin && (
-          <button onClick={openAdd} className="shimmer-btn" style={{ padding: "10px 18px", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontFamily: "var(--font-syne)" }}>
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            Add Student
-          </button>
-        )}
       </div>
 
       {/* Table */}
-      <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-        <DataTable
-          columns={columns}
-          data={students}
-          loading={loading}
-          searchQuery={search}
-          searchKeys={["full_name", "email", "student_number"]}
-          emptyMessage="No students yet"
-          emptyIcon="🎓"
-        />
-      </div>
+      <DataTable
+        columns={columns}
+        data={students}
+        loading={loading}
+        searchQuery={search}
+        searchKeys={["full_name", "email", "student_number"]}
+        emptyMessage="No students currently enrolled."
+        emptyIcon="🎓"
+      />
 
       {/* Add/Edit Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Student" : "Add Student"}>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? "Edit Student Details" : "Enroll New Student"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {!editing && (
             <>
-              <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Full Name</label><input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="input-glow" style={inputSt} placeholder="Jane Doe" /></div>
-              <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Email</label><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-glow" style={inputSt} placeholder="jane@school.edu" /></div>
-              <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Password</label><input required type="password" minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="input-glow" style={inputSt} placeholder="Min 8 characters" /></div>
-              <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Student ID</label><input required value={form.student_number} onChange={(e) => setForm({ ...form, student_number: e.target.value })} className="input-glow" style={inputSt} placeholder="STU-2024-001" /></div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#334155]">
+                  Full Name
+                </label>
+                <input
+                  required
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  placeholder="e.g. Abebe Kebede"
+                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#334155]">
+                  School Email / Username
+                </label>
+                <input
+                  required
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="student@school.edu"
+                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#334155]">
+                  Password / PIN (digits only)
+                </label>
+                <input
+                  required
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value.replace(/\D/g, "") })}
+                  placeholder="e.g. 123456"
+                  inputMode="numeric"
+                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-[#334155]">
+                  Student ID Number
+                </label>
+                <input
+                  required
+                  value={form.student_number}
+                  onChange={(e) => setForm({ ...form, student_number: e.target.value })}
+                  placeholder="STU-2024-001"
+                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+                />
+              </div>
             </>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Grade Level</label><input required value={form.grade_level} onChange={(e) => setForm({ ...form, grade_level: e.target.value })} className="input-glow" style={inputSt} placeholder="Grade 10" /></div>
-            <div><label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 5 }}>Section</label><input required value={form.section} onChange={(e) => setForm({ ...form, section: e.target.value })} className="input-glow" style={inputSt} placeholder="A" /></div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-bold text-[#334155]">
+                Grade Level
+              </label>
+              <select
+                required
+                value={form.grade_level}
+                onChange={(e) => setForm({ ...form, grade_level: e.target.value })}
+                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+              >
+                <option value="Grade 9">Grade 9</option>
+                <option value="Grade 10">Grade 10</option>
+                <option value="Grade 11">Grade 11</option>
+                <option value="Grade 12">Grade 12</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-bold text-[#334155]">
+                Section
+              </label>
+              <input
+                required
+                value={form.section}
+                onChange={(e) => setForm({ ...form, section: e.target.value })}
+                placeholder="A, B, or C"
+                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+              >
+              </input>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-            <button type="button" onClick={() => setModalOpen(false)} style={{ padding: "10px 18px", borderRadius: 9, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9898b0", cursor: "pointer", fontSize: 14 }}>Cancel</button>
-            <button type="submit" disabled={saving} className="shimmer-btn" style={{ padding: "10px 22px", border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "var(--font-syne)" }}>
-              {saving ? "Saving…" : editing ? "Update" : "Add Student"}
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-[#e2e8f0]">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="shimmer-btn rounded-xl px-5 py-2 text-xs font-bold shadow-sm"
+            >
+              {saving ? "Saving…" : editing ? "Update Details" : "Enroll Student"}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Confirm delete */}
-      <ConfirmModal open={!!delTarget} onClose={() => setDelTarget(null)} onConfirm={handleDelete} name={delTarget?.full_name ?? ""} />
+      <ConfirmModal
+        open={!!delTarget}
+        onClose={() => setDelTarget(null)}
+        onConfirm={handleDelete}
+        name={delTarget?.full_name ?? ""}
+      />
     </div>
   );
 }
 
 export default function StudentsPage() {
-  return <ToastProvider><StudentsContent /></ToastProvider>;
+  return (
+    <ToastProvider>
+      <StudentsContent />
+    </ToastProvider>
+  );
 }

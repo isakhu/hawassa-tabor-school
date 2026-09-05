@@ -4,215 +4,164 @@ import { useEffect, useState } from "react";
 import { downloadFile, get } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-function SummaryCard({ title, children, color }: { title: string; children: React.ReactNode; color: string }) {
-  return (
-    <div className="glass-card stat-card" style={{ padding: 24, borderColor: `${color}33` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-        <div style={{ width: 4, height: 20, borderRadius: 2, background: color }} />
-        <h3 style={{ fontFamily: "var(--font-syne)", fontSize: 15, fontWeight: 700, color: "#e8e8f0" }}>{title}</h3>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function SkeletonRow() {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(99,102,241,0.07)" }}>
-      <div className="skeleton" style={{ width: "45%", height: 12 }} />
-      <div className="skeleton" style={{ width: "20%", height: 12 }} />
-    </div>
-  );
-}
-
 export default function StudentDashboardPage() {
   const user = getUser();
-
   const [grades, setGrades] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<any | null>(null);
-  const [resultReady, setResultReady] = useState(false);
   const [downloadingResult, setDownloadingResult] = useState(false);
   const [resultError, setResultError] = useState("");
 
   useEffect(() => {
-    async function load() {
-      const [gradesResult, attendanceResult, finalResult] = await Promise.allSettled([
-        get<any[]>("/grades"),
-        get<any[]>("/attendance"),
-        get<any>("/student-portal/results"),
-      ]);
+    async function loadStudentData() {
+      try {
+        const [gradesRes, attendanceRes] = await Promise.allSettled([
+          get<any[]>("/grades"),
+          get<any[]>("/attendance"),
+        ]);
 
-      if (gradesResult.status === "fulfilled") {
-        setGrades(Array.isArray(gradesResult.value) ? gradesResult.value : []);
+        if (gradesRes.status === "fulfilled" && Array.isArray(gradesRes.value)) {
+          setGrades(gradesRes.value);
+        }
+        if (attendanceRes.status === "fulfilled" && Array.isArray(attendanceRes.value)) {
+          setAttendance(attendanceRes.value);
+        }
+      } catch (err) {
+        console.error("Student portal load failed:", err);
+      } finally {
+        setLoading(false);
       }
-      if (attendanceResult.status === "fulfilled") {
-        setAttendance(Array.isArray(attendanceResult.value) ? attendanceResult.value : []);
-      }
-      if (finalResult.status === "fulfilled") {
-        setResult(finalResult.value);
-        setResultReady(Array.isArray(finalResult.value?.subjects) && finalResult.value.subjects.length > 0);
-        setResultError("");
-      } else {
-        setResult(null);
-        setResultReady(false);
-      }
-
-      setLoading(false);
     }
-    load();
+    loadStudentData();
   }, []);
 
-  async function handleDownloadResult() {
+  async function handleDownloadReport() {
     setDownloadingResult(true);
     setResultError("");
     try {
-      await downloadFile("/student-portal/results/pdf", "final_result.pdf");
-    } catch (error) {
-      setResultError(error instanceof Error ? error.message : "Unable to download the final result.");
+      await downloadFile("/student-portal/results/download", "Tabor_School_Report_Card.pdf");
+    } catch (err: any) {
+      setResultError(err.message || "Final academic result is not yet published.");
     } finally {
       setDownloadingResult(false);
     }
   }
 
-  const present = attendance.filter((a) => a.status === "PRESENT").length;
-  const absent = attendance.filter((a) => a.status === "ABSENT").length;
-  const late = attendance.filter((a) => a.status === "LATE").length;
-  const total = attendance.length;
-  const attRate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
-
-  function letterColor(letter: string) {
-    if (letter.startsWith("A")) return "#10b981";
-    if (letter.startsWith("B")) return "#6366f1";
-    if (letter.startsWith("C")) return "#f59e0b";
-    return "#ef4444";
-  }
+  const presentCount = attendance.filter((a) => a.status === "PRESENT").length;
+  const attendanceRate = attendance.length > 0 ? Math.round((presentCount / attendance.length) * 100) : 100;
 
   return (
-    <div className="animate-page-in">
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: "var(--font-syne)", fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
-          <span className="gradient-text">{greeting()}</span>
-          <span style={{ color: "#e8e8f0" }}>, {user?.full_name.split(" ")[0] ?? "Student"} 🎓</span>
-        </h2>
-        <p style={{ color: "#6b6b80", fontSize: 14 }}>Here's a summary of your academic progress.</p>
+    <div className="space-y-8">
+      {/* Welcome Banner */}
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-[#e2e8f0] bg-white p-7 shadow-xs sm:flex-row sm:items-center">
+        <div>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#1267e8]">
+            Student Academic Portal
+          </span>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-[#0b1f3a] sm:text-3xl">
+            Welcome, {user?.full_name || "Student"}
+          </h1>
+          <p className="mt-1 text-xs text-[#64748b]">
+            Hawassa Tabor Primary and Secondary School • Academic Year 2024/25
+          </p>
+        </div>
+
+        <button
+          onClick={handleDownloadReport}
+          disabled={downloadingResult}
+          className="shimmer-btn rounded-xl px-5 py-2.5 text-xs font-bold shadow-sm"
+        >
+          {downloadingResult ? "Generating PDF…" : "📄 Download Official Report Card"}
+        </button>
       </div>
 
-      {/* Final Result */}
-      <SummaryCard title="Final Result" color="#f59e0b">
-        {loading ? (
-          <SkeletonRow />
-        ) : resultReady && result ? (
-          <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
-              <div style={{ padding: 12, background: "rgba(245,158,11,0.08)", borderRadius: 10 }}>
-                <p style={{ fontSize: 11, color: "#6b6b80" }}>Overall Average</p>
-                <p style={{ fontSize: 21, fontWeight: 800, color: "#f59e0b" }}>{result.overall_average}%</p>
-              </div>
-              <div style={{ padding: 12, background: "rgba(99,102,241,0.08)", borderRadius: 10 }}>
-                <p style={{ fontSize: 11, color: "#6b6b80" }}>Overall Grade</p>
-                <p style={{ fontSize: 21, fontWeight: 800, color: "#818cf8" }}>{result.overall_grade}</p>
-              </div>
-              <div style={{ padding: 12, background: "rgba(16,185,129,0.08)", borderRadius: 10 }}>
-                <p style={{ fontSize: 11, color: "#6b6b80" }}>Subjects</p>
-                <p style={{ fontSize: 21, fontWeight: 800, color: "#10b981" }}>{result.subjects.length}</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleDownloadResult}
-              disabled={downloadingResult}
-              style={{ border: 0, borderRadius: 10, padding: "11px 18px", background: downloadingResult ? "#4b5563" : "#f59e0b", color: "#111827", fontWeight: 800, cursor: downloadingResult ? "wait" : "pointer" }}
-            >
-              {downloadingResult ? "Preparing PDF..." : "Download Final Result PDF"}
-            </button>
-            {resultError && <p style={{ color: "#ef4444", fontSize: 12, marginTop: 10 }}>{resultError}</p>}
-          </div>
-        ) : (
-          <div>
-            <p style={{ color: "#9898b0", fontSize: 14, marginBottom: 6 }}>Your final result is not ready yet.</p>
-            <p style={{ color: "#6b6b80", fontSize: 12 }}>All required subject grades must be approved by the class head before the final result and PDF become available.</p>
-          </div>
-        )}
-      </SummaryCard>
-
-      {!loading && total > 0 && (
-        <div style={{ margin: "24px 0", padding: "16px 20px", background: `${attRate >= 75 ? "rgba(16,185,129" : "rgba(239,68,68"},0.08)`, border: `1px solid ${attRate >= 75 ? "rgba(16,185,129" : "rgba(239,68,68"},0.25)`, borderRadius: 14, display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 24 }}>{attRate >= 75 ? "✅" : "⚠️"}</span>
-          <div>
-            <p style={{ fontFamily: "var(--font-syne)", fontWeight: 700, color: "#e8e8f0", fontSize: 15 }}>
-              Your attendance rate is <span style={{ color: attRate >= 75 ? "#10b981" : "#ef4444" }}>{attRate}%</span>
-            </p>
-            <p style={{ fontSize: 13, color: "#6b6b80" }}>{present} present · {late} late · {absent} absent</p>
-          </div>
+      {resultError && (
+        <div className="rounded-xl border border-[#fed7aa] bg-[#fff7ed] p-4 text-xs font-semibold text-[#c2410c]">
+          Notice: {resultError}
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="max-lg:grid-cols-1">
-        <SummaryCard title="My Grades" color="#6366f1">
-          {loading
-            ? [0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)
-            : grades.length === 0
-              ? <p style={{ color: "#6b6b80", fontSize: 14 }}>No grades recorded yet.</p>
-              : <>
-                  {grades.slice(0, 6).map((g) => (
-                    <div key={g.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(99,102,241,0.07)" }}>
-                      <div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: "#e8e8f0" }}>{g.assessment_type}</p>
-                        <p style={{ fontSize: 11, color: "#6b6b80" }}>Term: {g.term}</p>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, background: `${letterColor(g.grade_letter)}22`, color: letterColor(g.grade_letter), fontSize: 13, fontWeight: 700, fontFamily: "var(--font-syne)" }}>
-                          {g.grade_letter}
-                        </span>
-                        <p style={{ fontSize: 11, color: "#6b6b80", marginTop: 2 }}>{g.percentage ?? g.score}%</p>
-                      </div>
-                    </div>
-                  ))}
-                  <a href="/grades" style={{ display: "block", marginTop: 12, fontSize: 13, color: "#818cf8", textDecoration: "none", fontWeight: 600 }}>View all grades →</a>
-                </>
-          }
-        </SummaryCard>
+      {/* Overview Cards */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="stat-card p-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ecfdf5] text-[#059669]">
+            📅
+          </div>
+          <p className="mt-4 text-xs font-semibold text-[#64748b]">Attendance Rate</p>
+          <p className="mt-1 text-3xl font-black text-[#0b1f3a]">
+            {attendanceRate}%
+          </p>
+          <p className="mt-1 text-[11px] text-[#94a3b8]">
+            {presentCount} of {attendance.length} sessions attended
+          </p>
+        </div>
 
-        <SummaryCard title="My Attendance" color="#10b981">
-          {loading
-            ? [0, 1, 2, 3].map((i) => <SkeletonRow key={i} />)
-            : attendance.length === 0
-              ? <p style={{ color: "#6b6b80", fontSize: 14 }}>No attendance records yet.</p>
-              : (
-                <>
-                  <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-                    {[
-                      { label: "Present", count: present, color: "#10b981" },
-                      { label: "Late", count: late, color: "#f59e0b" },
-                      { label: "Absent", count: absent, color: "#ef4444" },
-                    ].map((s) => (
-                      <div key={s.label} style={{ flex: 1, minWidth: 70, padding: "12px 8px", background: `${s.color}12`, borderRadius: 10, textAlign: "center", border: `1px solid ${s.color}30` }}>
-                        <p style={{ fontFamily: "var(--font-syne)", fontSize: 22, fontWeight: 800, color: s.color }}>{s.count}</p>
-                        <p style={{ fontSize: 11, color: "#6b6b80" }}>{s.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {attendance.slice(0, 5).map((a) => (
-                    <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid rgba(99,102,241,0.07)" }}>
-                      <p style={{ fontSize: 13, color: "#9898b0" }}>{new Date(a.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                      <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: a.status === "PRESENT" ? "rgba(16,185,129,0.15)" : a.status === "LATE" ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)", color: a.status === "PRESENT" ? "#10b981" : a.status === "LATE" ? "#f59e0b" : "#ef4444" }}>
-                        {a.status}
+        <div className="stat-card p-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#1267e8]">
+            📊
+          </div>
+          <p className="mt-4 text-xs font-semibold text-[#64748b]">Recorded Assessments</p>
+          <p className="mt-3 text-3xl font-black text-[#0b1f3a]">
+            {grades.length}
+          </p>
+          <p className="mt-1 text-[11px] text-[#94a3b8]">Evaluated subjects & tests</p>
+        </div>
+
+        <div className="stat-card p-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fef3c7] text-[#d97706]">
+            🎓
+          </div>
+          <p className="mt-4 text-xs font-semibold text-[#64748b]">Enrollment Status</p>
+          <p className="mt-1 text-3xl font-black text-[#059669]">
+            Active
+          </p>
+          <p className="mt-1 text-[11px] text-[#94a3b8]">Regular Full-time Student</p>
+        </div>
+      </div>
+
+      {/* Recent Grades Table */}
+      <div className="card p-6">
+        <h2 className="text-base font-extrabold text-[#0b1f3a]">
+          Your Academic Assessment Record
+        </h2>
+        <p className="mt-0.5 text-xs text-[#64748b]">
+          Verified assessment results submitted by your subject teachers.
+        </p>
+
+        <div className="mt-5 overflow-x-auto">
+          {loading ? (
+            <div className="py-8 text-center text-xs text-[#64748b]">Loading grades…</div>
+          ) : grades.length === 0 ? (
+            <div className="py-12 text-center text-xs text-[#64748b]">
+              No subject assessment records published yet for this term.
+            </div>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-[#e2e8f0] text-[11px] font-bold uppercase text-[#64748b]">
+                  <th className="py-3">Subject / Class</th>
+                  <th className="py-3">Assessment</th>
+                  <th className="py-3">Score</th>
+                  <th className="py-3">Grade</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f1f5f9]">
+                {grades.map((g) => (
+                  <tr key={g.id} className="text-xs">
+                    <td className="py-3.5 font-bold text-[#0f172a]">{g.class_name || "—"}</td>
+                    <td className="py-3.5 text-[#475569]">{g.assessment_type || "Exam"}</td>
+                    <td className="py-3.5 font-semibold text-[#0f172a]">{g.score} / {g.max_score}</td>
+                    <td className="py-3.5">
+                      <span className="rounded-md bg-[#eaf2ff] px-2 py-0.5 font-bold text-[#1267e8]">
+                        {g.grade_letter || "A"}
                       </span>
-                    </div>
-                  ))}
-                </>
-              )
-          }
-        </SummaryCard>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 
 export interface Column<T> {
   key: string;
@@ -18,47 +18,36 @@ interface DataTableProps<T extends { id: string }> {
   pageSize?: number;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
-  onRefresh?: () => Promise<void>;
 }
 
-// ─── Branded loader ───────────────────────────────────────────────────────────
-function EduLoader() {
-  return (
-    <div className="educore-loader" style={{ padding: "40px", justifyContent: "center" }}>
-      <span /><span /><span />
-    </div>
-  );
-}
-
-// ─── Empty state SVG ──────────────────────────────────────────────────────────
 function EmptyState({ message, icon }: { message: string; icon?: React.ReactNode }) {
   return (
-    <div style={{ padding: "60px 20px", textAlign: "center", color: "#6b6b80" }}>
-      {icon
-        ? <div style={{ fontSize: 48, marginBottom: 14, animation: "float3 6s ease-in-out infinite" }}>{icon}</div>
-        : (
-          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" style={{ margin: "0 auto 16px", animation: "float3 6s ease-in-out infinite", display: "block" }}>
-            <circle cx="36" cy="36" r="32" stroke="rgba(99,102,241,0.2)" strokeWidth="1.5" />
-            <circle cx="36" cy="36" r="20" stroke="rgba(139,92,246,0.15)" strokeWidth="1" />
-            <path d="M26 36h20M36 26v20" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5" strokeLinecap="round" />
-            <circle cx="24" cy="24" r="3" fill="rgba(236,72,153,0.25)" />
-            <circle cx="48" cy="48" r="2" fill="rgba(99,102,241,0.25)" />
-            <circle cx="50" cy="22" r="4" fill="rgba(139,92,246,0.15)" />
+    <div className="py-16 text-center text-[#64748b]">
+      {icon ? (
+        <div className="mb-3 text-4xl">{icon}</div>
+      ) : (
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf2ff] text-[#1267e8]">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-        )
-      }
-      <p style={{ fontFamily: "var(--font-syne)", fontSize: 15, fontWeight: 700, color: "#9898b0", marginBottom: 6 }}>{message}</p>
-      <p style={{ fontSize: 13 }}>Try adjusting your search or adding a new record.</p>
+        </div>
+      )}
+      <p className="text-sm font-bold text-[#0f172a]">{message}</p>
+      <p className="mt-1 text-xs text-[#94a3b8]">Try adjusting your search criteria or add a new entry.</p>
     </div>
   );
 }
 
-function SkeletonRow({ cols, opacity = 1 }: { cols: number; opacity?: number }) {
+function SkeletonRow({ cols }: { cols: number }) {
   return (
-    <tr style={{ opacity }}>
+    <tr>
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} style={{ padding: "15px 16px" }}>
-          <div className="skeleton" style={{ height: 13, borderRadius: 6, width: i === 0 ? 36 : `${60 + Math.random() * 30}%` }} />
+        <td key={i} className="px-5 py-4">
+          <div
+            className="skeleton h-4"
+            style={{ width: i === 0 ? "40px" : `${55 + (i * 12) % 35}%` }}
+          />
         </td>
       ))}
     </tr>
@@ -66,49 +55,16 @@ function SkeletonRow({ cols, opacity = 1 }: { cols: number; opacity?: number }) 
 }
 
 export default function DataTable<T extends { id: string }>({
-  columns, data, loading = false,
-  searchQuery = "", searchKeys = [],
-  pageSize = 10, emptyMessage = "No records found.",
+  columns,
+  data,
+  loading = false,
+  searchQuery = "",
+  searchKeys = [],
+  pageSize = 10,
+  emptyMessage = "No records found.",
   emptyIcon,
-  onRefresh,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(1);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const startY = useRef(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!onRefresh || isRefreshing || loading) return;
-    if (window.scrollY === 0) {
-      startY.current = e.touches[0].pageY;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!onRefresh || isRefreshing || loading || startY.current === 0) return;
-    const deltaY = e.touches[0].pageY - startY.current;
-    if (deltaY > 0 && window.scrollY === 0) {
-      const distance = Math.min(deltaY * 0.35, 70);
-      setPullDistance(distance);
-      if (distance > 10 && e.cancelable) e.preventDefault();
-    }
-  };
-
-  const handleTouchEnd = async () => {
-    if (pullDistance > 55 && onRefresh) {
-      setIsRefreshing(true);
-      setPullDistance(50);
-      try {
-        await onRefresh();
-      } finally {
-        setIsRefreshing(false);
-        setPullDistance(0);
-      }
-    } else {
-      setPullDistance(0);
-    }
-    startY.current = 0;
-  };
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim() || searchKeys.length === 0) return data;
@@ -119,110 +75,81 @@ export default function DataTable<T extends { id: string }>({
   }, [data, searchQuery, searchKeys]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const safePage   = Math.min(page, totalPages);
-  const paged      = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
-
-  const tdBase: React.CSSProperties = {
-    padding: "13px 16px",
-    color: "#c8c8d8",
-    fontSize: 14,
-    borderBottom: "1px solid rgba(99,102,241,0.06)",
-    fontFamily: "var(--font-dm-sans)",
-    whiteSpace: "nowrap",
-  };
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div 
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ position: 'relative' }}
-    >
-      {/* Pull-to-refresh Indicator */}
-      {onRefresh && (
-        <div style={{
-          height: pullDistance || (isRefreshing ? 50 : 0),
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: pullDistance === 0 ? "height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)" : "none",
-          background: "rgba(212, 175, 55, 0.03)",
-          borderBottom: pullDistance > 0 || isRefreshing ? "1px solid rgba(212, 175, 55, 0.15)" : "none",
-          borderRadius: "14px 14px 0 0",
-          color: "#D4AF37",
-          fontSize: "12px",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.5px"
-        }}>
-          <span style={{ transform: `rotate(${pullDistance * 4}deg)`, marginRight: "10px", fontSize: "16px", display: "inline-block" }}>
-            {isRefreshing ? "⏳" : "⚓"}
-          </span>
-          {isRefreshing ? "Refreshing Records..." : pullDistance > 55 ? "Release to sync" : "Pull to sync"}
-        </div>
-      )}
-
-      <div style={{ overflowX: "auto", borderRadius: 14, border: "1px solid rgba(99,102,241,0.12)" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
           <thead>
-            <tr style={{ background: "linear-gradient(90deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%)" }}>
+            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
               {columns.map((col) => (
-                <th key={col.key} style={{ padding: "13px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "#6b6b80", fontFamily: "var(--font-syne)", whiteSpace: "nowrap", width: col.width }}>
+                <th
+                  key={col.key}
+                  style={{ width: col.width }}
+                  className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#64748b]"
+                >
                   {col.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
-            {loading || isRefreshing
-              ? Array.from({ length: Math.min(pageSize, 5) }).map((_, i) => <SkeletonRow key={i} cols={columns.length} opacity={isRefreshing ? 0.7 : 1} />)
-              : paged.length === 0
-                ? <tr><td colSpan={columns.length}><EmptyState message={emptyMessage} icon={emptyIcon} /></td></tr>
-                : paged.map((row, rowIndex) => (
-                  <tr
-                    key={row.id}
-                    className="table-row-in"
-                    style={{ "--row-index": rowIndex } as React.CSSProperties}
-                    onMouseEnter={(e) => {
-                      const tr = e.currentTarget as HTMLTableRowElement;
-                      tr.style.background = "linear-gradient(90deg, rgba(99,102,241,0.07) 0%, transparent 60%)";
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLTableRowElement).style.background = "transparent";
-                    }}
-                  >
-                    {columns.map((col) => (
-                      <td key={col.key} style={tdBase}>
-                        {col.render ? col.render(row) : String((row as any)[col.key] ?? "—")}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-            }
+          <tbody className="divide-y divide-[#f1f5f9]">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonRow key={i} cols={columns.length} />
+              ))
+            ) : paged.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length}>
+                  <EmptyState message={emptyMessage} icon={emptyIcon} />
+                </td>
+              </tr>
+            ) : (
+              paged.map((row) => (
+                <tr
+                  key={row.id}
+                  className="transition-colors hover:bg-[#f8fafc]/80"
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-5 py-3.5 text-sm text-[#1e293b]">
+                      {col.render ? col.render(row) : String((row as any)[col.key] ?? "—")}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Footer */}
       {!loading && filtered.length > pageSize && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16, flexWrap: "wrap", gap: 8 }}>
-          <p style={{ fontSize: 13, color: "#6b6b80" }}>
-            Showing {Math.min((safePage - 1) * pageSize + 1, filtered.length)}–{Math.min(safePage * pageSize, filtered.length)} of {filtered.length}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#e2e8f0] bg-[#f8fafc] px-5 py-3 text-xs">
+          <p className="text-[#64748b]">
+            Showing <span className="font-semibold text-[#0f172a]">{(safePage - 1) * pageSize + 1}</span>–
+            <span className="font-semibold text-[#0f172a]">{Math.min(safePage * pageSize, filtered.length)}</span> of{" "}
+            <span className="font-semibold text-[#0f172a]">{filtered.length}</span> records
           </p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setPage((p: number) => Math.max(1, p - 1))} disabled={safePage === 1} style={{ padding: "7px 16px", borderRadius: 8, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: safePage === 1 ? "#6b6b80" : "#e8e8f0", cursor: safePage === 1 ? "not-allowed" : "pointer", fontSize: 13, transition: "background 0.2s" }}
-              onMouseEnter={(e) => { if (safePage !== 1) (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.2)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.1)"; }}>
-              ← Prev
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 font-semibold text-[#334155] shadow-xs transition hover:bg-[#f1f5f9] disabled:opacity-40 disabled:hover:bg-white"
+            >
+              Previous
             </button>
-            <span style={{ padding: "7px 14px", fontSize: 13, color: "#9898b0", background: "rgba(99,102,241,0.05)", borderRadius: 8, border: "1px solid rgba(99,102,241,0.1)" }}>
+            <span className="rounded-lg bg-[#eaf2ff] px-2.5 py-1 font-bold text-[#1267e8]">
               {safePage} / {totalPages}
             </span>
-            <button onClick={() => setPage((p: number) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} style={{ padding: "7px 16px", borderRadius: 8, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: safePage === totalPages ? "#6b6b80" : "#e8e8f0", cursor: safePage === totalPages ? "not-allowed" : "pointer", fontSize: 13, transition: "background 0.2s" }}
-              onMouseEnter={(e) => { if (safePage !== totalPages) (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.2)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(99,102,241,0.1)"; }}>
-              Next →
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 font-semibold text-[#334155] shadow-xs transition hover:bg-[#f1f5f9] disabled:opacity-40 disabled:hover:bg-white"
+            >
+              Next
             </button>
           </div>
         </div>

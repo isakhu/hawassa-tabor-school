@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { API_BASE_URL } from '@/lib/constants';
+import React, { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface SummaryData {
   total_students: number;
@@ -15,114 +15,44 @@ export default function DashboardSummaryCards({ token }: { token: string }) {
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/auth/dashboard/summary`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         setData(json);
         setLoading(false);
       })
-      .catch(err => console.error("Failed to fetch dashboard summary", err));
+      .catch((err) => {
+        console.error("Failed to fetch dashboard summary", err);
+        setLoading(false);
+      });
   }, [token]);
 
-  if (loading) return <div style={{ color: '#D4AF37' }}>Loading summary...</div>;
-
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: '#111',
-    border: '1px solid #D4AF37',
-    borderRadius: '8px',
-    padding: '24px',
-    flex: '1 1 280px',
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    color: '#888',
-    fontSize: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
-    marginBottom: '8px',
-  };
-
-  const valueStyle: React.CSSProperties = {
-    color: '#D4AF37',
-    fontSize: '36px',
-    fontWeight: '800',
-    textShadow: '0 0 10px rgba(212, 175, 55, 0.3)',
-  };
+  if (loading) {
+    return <div className="py-6 text-xs font-semibold text-[#64748b]">Loading summary…</div>;
+  }
 
   return (
-    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', width: '100%', marginBottom: '32px' }}>
-      <div 
-        style={cardStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
-          e.currentTarget.style.transform = 'translateY(-5px)';
-          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#111';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-        }}
-      >
-        <div style={labelStyle}>Total Students</div>
-        <div style={valueStyle}>
-          {data?.total_students.toLocaleString()}
-        </div>
-        <div style={{ color: '#444', fontSize: '10px', marginTop: '4px' }}>
-          Enrolled in Tabor
-        </div>
+    <div className="grid gap-4 sm:grid-cols-3">
+      <div className="stat-card p-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#64748b]">Total Students</p>
+        <p className="mt-2 text-3xl font-black text-[#1267e8]">
+          {data?.total_students?.toLocaleString() ?? 0}
+        </p>
       </div>
 
-      <div 
-        style={cardStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
-          e.currentTarget.style.transform = 'translateY(-5px)';
-          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#111';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-        }}
-      >
-        <div style={labelStyle}>Active Teachers</div>
-        <div style={valueStyle}>
-          {data?.active_teachers.toLocaleString()}
-        </div>
-        <div style={{ color: '#444', fontSize: '10px', marginTop: '4px' }}>
-          Verified Faculty
-        </div>
+      <div className="stat-card p-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#64748b]">Active Teachers</p>
+        <p className="mt-2 text-3xl font-black text-[#059669]">
+          {data?.active_teachers?.toLocaleString() ?? 0}
+        </p>
       </div>
 
-      <div 
-        style={cardStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(212, 175, 55, 0.08)';
-          e.currentTarget.style.transform = 'translateY(-5px)';
-          e.currentTarget.style.boxShadow = '0 15px 35px rgba(212, 175, 55, 0.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#111';
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-        }}
-      >
-        <div style={labelStyle}>Total Classes</div>
-        <div style={valueStyle}>
-          {data?.total_classes.toLocaleString()}
-        </div>
-        <div style={{ color: '#444', fontSize: '10px', marginTop: '4px' }}>
-          Active Sections
-        </div>
+      <div className="stat-card p-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-[#64748b]">Total Classes</p>
+        <p className="mt-2 text-3xl font-black text-[#d97706]">
+          {data?.total_classes?.toLocaleString() ?? 0}
+        </p>
       </div>
     </div>
   );

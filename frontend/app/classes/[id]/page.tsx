@@ -10,7 +10,6 @@ import DataTable, { Column } from "@/components/DataTable";
 import Modal from "@/components/Modal";
 import { ToastProvider, useToast } from "@/components/Toast";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface ClassDetail {
   id: string;
   class_name: string;
@@ -52,80 +51,92 @@ interface GradeRecord {
   student_name?: string;
 }
 
-// ─── Grade letter color ────────────────────────────────────────────────────────
-function letterStyle(letter: string): React.CSSProperties {
-  const l = letter?.[0] ?? "F";
-  const configs: Record<string, { bg: string; color: string; shadow: string }> = {
-    A: { bg: "rgba(16,185,129,0.15)",  color: "#10b981", shadow: "0 0 10px rgba(16,185,129,0.3)"  },
-    B: { bg: "rgba(99,102,241,0.15)",  color: "#818cf8", shadow: "0 0 10px rgba(99,102,241,0.3)"  },
-    C: { bg: "rgba(245,158,11,0.15)",  color: "#fbbf24", shadow: "0 0 10px rgba(245,158,11,0.3)"  },
-    D: { bg: "rgba(239,68,68,0.12)",   color: "#f87171", shadow: "0 0 10px rgba(239,68,68,0.3)"   },
-    F: { bg: "rgba(239,68,68,0.15)",   color: "#ef4444", shadow: "0 0 12px rgba(239,68,68,0.4)"   },
-  };
-  const cfg = configs[l] ?? configs.F;
-  return { display: "inline-block", padding: "3px 10px", borderRadius: 20, background: cfg.bg, color: cfg.color, boxShadow: cfg.shadow, fontWeight: 700, fontSize: 13, fontFamily: "var(--font-syne)" };
+function GradeBadge({ letter }: { letter: string }) {
+  const l = (letter ?? "F")[0];
+  const cfg = {
+    A: { bg: "#ecfdf5", color: "#059669", border: "#a7f3d0" },
+    B: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
+    C: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
+    D: { bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
+    F: { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
+  }[l] ?? { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0" };
+
+  return (
+    <span
+      style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
+      className="inline-block rounded-md border px-2 py-0.5 text-xs font-bold"
+    >
+      {letter || "—"}
+    </span>
+  );
 }
 
 function Avatar({ name }: { name: string }) {
-  const initials = name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const initials = name.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-      {initials}
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1267e8] text-xs font-bold text-white shadow-xs">
+      {initials || "ST"}
     </div>
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 function ClassDetailContent() {
-  const params  = useParams<{ id: string }>();
-  const classId = params.id;
-  const router  = useRouter();
-  const user    = getUser();
-  const toast   = useToast();
+  const { id: classId } = useParams() as { id: string };
+  const router = useRouter();
+  const user = getUser();
+  const toast = useToast();
   const isAdmin = user?.role === ROLES.ADMIN;
 
-  const [cls,       setCls]       = useState<ClassDetail | null>(null);
-  const [students,  setStudents]  = useState<EnrolledStudent[]>([]);
-  const [grades,    setGrades]    = useState<GradeRecord[]>([]);
-  const [allStuds,  setAllStuds]  = useState<AllStudent[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [tab,       setTab]       = useState<"students" | "grades">("students");
+  const [cls, setCls] = useState<ClassDetail | null>(null);
+  const [students, setStudents] = useState<EnrolledStudent[]>([]);
+  const [grades, setGrades] = useState<GradeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"students" | "grades">("students");
+
   const [enrollModal, setEnrollModal] = useState(false);
-  const [enrollId,  setEnrollId]  = useState("");
+  const [allStuds, setAllStuds] = useState<AllStudent[]>([]);
+  const [enrollId, setEnrollId] = useState("");
   const [enrolling, setEnrolling] = useState(false);
   const [delStudent, setDelStudent] = useState<EnrolledStudent | null>(null);
 
   useEffect(() => {
-    if (!user) { router.replace("/login"); return; }
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
     loadAll();
   }, [classId]);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [detail, enrolledRaw, gradesRaw] = await Promise.all([
+      const [classData, studsData, gradesData] = await Promise.all([
         get<ClassDetail>(`/classes/${classId}`),
-        get<EnrolledStudent[]>(`/classes/${classId}`).catch(() => []),
-        get<GradeRecord[]>(`/grades?class_id=${classId}`).catch(() => []),
+        get<EnrolledStudent[]>(`/classes/${classId}/students`),
+        get<GradeRecord[]>(`/grades?class_id=${classId}`),
       ]);
-      setCls(detail as ClassDetail);
-
-      // The class detail endpoint returns enrolled students via the students field
-      const clsDetail = detail as any;
-      const enrolled: EnrolledStudent[] = Array.isArray(clsDetail.students)
-        ? clsDetail.students
-        : Array.isArray(enrolledRaw) ? enrolledRaw : [];
-
-      setStudents(enrolled.map((s: any) => ({ ...s, full_name: s.user?.full_name ?? "—", email: s.user?.email ?? "—" })));
-      setGrades(Array.isArray(gradesRaw) ? gradesRaw.map((g: any) => ({ ...g, student_name: g.student?.user?.full_name ?? "—" })) : []);
+      setCls(classData);
+      setStudents(
+        (Array.isArray(studsData) ? studsData : []).map((s) => ({
+          ...s,
+          full_name: s.user?.full_name ?? "—",
+          email: s.user?.email ?? "—",
+        }))
+      );
+      setGrades(
+        (Array.isArray(gradesData) ? gradesData : []).map((g) => ({
+          ...g,
+          student_name: g.student?.user?.full_name ?? g.student?.student_number ?? "—",
+        }))
+      );
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Failed to load class roster.", "error");
     } finally {
       setLoading(false);
     }
   }, [classId, toast]);
 
-  async function openEnroll() {
+  async function openEnrollModal() {
     try {
       const data = await get<AllStudent[]>("/students");
       const enrolledIds = new Set(students.map((s) => s.id));
@@ -133,7 +144,7 @@ function ClassDetailContent() {
       setEnrollId("");
       setEnrollModal(true);
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Failed to load students.", "error");
     }
   }
 
@@ -143,11 +154,11 @@ function ClassDetailContent() {
     setEnrolling(true);
     try {
       await post(`/classes/${classId}/enroll`, { student_id: enrollId });
-      toast.showToast("Student enrolled!", "success");
+      toast.showToast("Student enrolled successfully!", "success");
       setEnrollModal(false);
       loadAll();
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Enrollment failed.", "error");
     } finally {
       setEnrolling(false);
     }
@@ -157,151 +168,211 @@ function ClassDetailContent() {
     if (!delStudent) return;
     try {
       await del(`/classes/${classId}/enroll/${delStudent.id}`);
-      toast.showToast("Student removed.", "success");
+      toast.showToast("Student removed from class roster.", "success");
       setDelStudent(null);
       loadAll();
     } catch (e: any) {
-      toast.showToast(e.message, "error");
+      toast.showToast(e.message || "Remove failed.", "error");
     }
   }
 
-  // ─── Student columns ────────────────────────────────────────────────────────
   const studentCols: Column<EnrolledStudent>[] = [
-    { key: "avatar",         label: "",          width: 50, render: (s) => <Avatar name={s.full_name ?? "?"} /> },
-    { key: "full_name",      label: "Full Name",  render: (s) => <span style={{ fontWeight: 600, color: "#e8e8f0" }}>{s.full_name}</span> },
-    { key: "email",          label: "Email",      render: (s) => <span style={{ color: "#9898b0" }}>{s.email}</span> },
-    { key: "student_number", label: "Student ID" },
+    { key: "avatar", label: "", width: 44, render: (s) => <Avatar name={s.full_name ?? "?"} /> },
+    { key: "full_name", label: "Full Name", render: (s) => <span className="font-bold text-[#0f172a]">{s.full_name}</span> },
+    { key: "email", label: "Email", render: (s) => <span className="text-[#475569]">{s.email}</span> },
+    { key: "student_number", label: "Student ID", render: (s) => <span className="font-mono text-xs font-semibold text-[#1267e8]">{s.student_number}</span> },
     {
-      key: "remove", label: "", width: 80,
-      render: (s) => isAdmin ? (
-        <button onClick={() => setDelStudent(s)} style={{ padding: "5px 10px", borderRadius: 7, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171", cursor: "pointer", fontSize: 12, transition: "background 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.2)")} onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.1)")}>
-          Remove
-        </button>
-      ) : null,
+      key: "remove",
+      label: "Actions",
+      width: 80,
+      render: (s) =>
+        isAdmin ? (
+          <button
+            onClick={() => setDelStudent(s)}
+            className="rounded-lg border border-[#fecaca] bg-white px-2.5 py-1 text-xs font-bold text-[#dc2626] transition hover:bg-[#fef2f2]"
+          >
+            Remove
+          </button>
+        ) : null,
     },
   ];
 
-  // ─── Grade columns ──────────────────────────────────────────────────────────
   const gradeCols: Column<GradeRecord>[] = [
-    { key: "student_name",    label: "Student",     render: (g) => <span style={{ fontWeight: 600, color: "#e8e8f0" }}>{g.student_name}</span> },
-    { key: "assessment_type", label: "Assessment" },
-    { key: "term",            label: "Term" },
-    { key: "score",           label: "Score",       render: (g) => `${g.score} / ${g.max_score}` },
-    { key: "percentage",      label: "%",           render: (g) => `${g.percentage?.toFixed(1) ?? "—"}%` },
-    { key: "grade_letter",    label: "Grade",       render: (g) => <span style={letterStyle(g.grade_letter)}>{g.grade_letter}</span> },
+    { key: "student_name", label: "Student", render: (g) => <span className="font-bold text-[#0f172a]">{g.student_name}</span> },
+    { key: "assessment_type", label: "Assessment", render: (g) => <span className="text-xs text-[#334155]">{g.assessment_type}</span> },
+    { key: "term", label: "Term", render: (g) => <span className="text-xs text-[#64748b]">{g.term}</span> },
+    { key: "score", label: "Score", render: (g) => <span className="font-mono text-xs font-bold text-[#0f172a]">{g.score} / {g.max_score}</span> },
+    { key: "grade_letter", label: "Grade", render: (g) => <GradeBadge letter={g.grade_letter} /> },
   ];
 
-  // Determine gradient index for the banner
-  const GRADIENTS = ["linear-gradient(135deg,#6366f1,#4f46e5)","linear-gradient(135deg,#8b5cf6,#6d28d9)","linear-gradient(135deg,#ec4899,#be185d)"];
-  const bannerGrad = cls ? GRADIENTS[cls.class_name.charCodeAt(0) % GRADIENTS.length] : GRADIENTS[0];
-
   return (
-    <div className="animate-page-in">
+    <div className="space-y-6">
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, fontSize: 13, color: "#6b6b80" }}>
-        <Link href="/classes" style={{ color: "#818cf8", textDecoration: "none", fontWeight: 500 }}>Classes</Link>
-        <span>›</span>
-        <span style={{ color: "#9898b0" }}>{cls?.class_name ?? "Loading…"}</span>
+      <div className="flex items-center gap-2 text-xs font-semibold text-[#64748b]">
+        <Link href="/classes" className="text-[#1267e8] hover:underline">
+          Classes
+        </Link>
+        <span>/</span>
+        <span className="text-[#0f172a]">{cls?.class_name || "Class Details"}</span>
       </div>
 
-      {/* Banner */}
-      {loading ? (
-        <div className="skeleton" style={{ height: 120, borderRadius: 16, marginBottom: 24 }} />
-      ) : cls && (
-        <div style={{ borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
-          <div style={{ background: bannerGrad, padding: "24px 28px", position: "relative" }}>
-            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.2)" }} />
-            <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
-              <div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-                  {cls.academic_year} · Grade {cls.grade_level} · Section {cls.section}
-                </p>
-                <h1 style={{ fontFamily: "var(--font-syne)", fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 8 }}>
-                  {cls.class_name}
-                </h1>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <span style={{ padding: "4px 12px", background: "rgba(255,255,255,0.15)", borderRadius: 20, fontSize: 13, color: "#fff", backdropFilter: "blur(4px)" }}>
-                    👨‍🏫 {cls.teacher?.user?.full_name ?? "Unassigned"}
-                  </span>
-                  {cls.room_number && (
-                    <span style={{ padding: "4px 12px", background: "rgba(255,255,255,0.15)", borderRadius: 20, fontSize: 13, color: "#fff", backdropFilter: "blur(4px)" }}>
-                      🏫 {cls.room_number}
-                    </span>
-                  )}
-                  <span style={{ padding: "4px 12px", background: "rgba(255,255,255,0.15)", borderRadius: 20, fontSize: 13, color: "#fff", backdropFilter: "blur(4px)" }}>
-                    👥 {students.length} students
-                  </span>
-                </div>
-              </div>
-              {isAdmin && (
-                <button onClick={openEnroll} className="shimmer-btn" style={{ padding: "10px 18px", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "var(--font-syne)", flexShrink: 0 }}>
-                  + Enroll Student
-                </button>
-              )}
+      {/* Header Banner */}
+      {cls && (
+        <div className="flex flex-col justify-between gap-4 rounded-3xl border border-[#e2e8f0] bg-white p-7 shadow-xs sm:flex-row sm:items-center">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-[#eaf2ff] px-2.5 py-0.5 text-xs font-bold text-[#1267e8]">
+                Grade {cls.grade_level} • Section {cls.section}
+              </span>
+              <span className="text-xs text-[#94a3b8]">{cls.academic_year}</span>
             </div>
+            <h1 className="mt-2 text-2xl font-black tracking-tight text-[#0b1f3a] sm:text-3xl">
+              {cls.class_name}
+            </h1>
+            <p className="mt-1 text-xs text-[#64748b]">
+              Head Instructor: <strong className="text-[#334155]">{cls.teacher?.user?.full_name || "Unassigned"}</strong> • Room: {cls.room_number || "Main Campus"}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <button
+                onClick={openEnrollModal}
+                className="shimmer-btn rounded-xl px-4 py-2 text-xs font-bold shadow-sm"
+              >
+                + Enroll Student
+              </button>
+            )}
+            <Link
+              href="/attendance"
+              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
+            >
+              Take Attendance
+            </Link>
           </div>
         </div>
       )}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.12)", borderRadius: 10, padding: 4, width: "fit-content" }}>
-        {(["students", "grades"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: tab === t ? 700 : 400, fontFamily: "var(--font-syne)", background: tab === t ? "linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.2))" : "transparent", color: tab === t ? "#e8e8f0" : "#6b6b80", transition: "background 0.2s, color 0.2s" }}>
-            {t === "students" ? "👥 Enrolled Students" : "📊 Grades Overview"}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 border-b border-[#e2e8f0] pb-2 text-sm font-bold">
+        <button
+          onClick={() => setTab("students")}
+          className={`px-4 py-1.5 rounded-xl transition ${
+            tab === "students"
+              ? "bg-[#1267e8] text-white shadow-xs"
+              : "text-[#64748b] hover:text-[#0f172a]"
+          }`}
+        >
+          Enrolled Students ({students.length})
+        </button>
+        <button
+          onClick={() => setTab("grades")}
+          className={`px-4 py-1.5 rounded-xl transition ${
+            tab === "grades"
+              ? "bg-[#1267e8] text-white shadow-xs"
+              : "text-[#64748b] hover:text-[#0f172a]"
+          }`}
+        >
+          Assessment Records ({grades.length})
+        </button>
       </div>
 
-      {/* Tab content */}
-      <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
-        {tab === "students" ? (
-          <DataTable columns={studentCols} data={students} loading={loading} searchKeys={["full_name", "email", "student_number"]} emptyMessage="No students enrolled yet" emptyIcon="👥" />
-        ) : (
-          <DataTable columns={gradeCols} data={grades} loading={loading} searchKeys={["student_name", "assessment_type", "term"]} emptyMessage="No grades recorded for this class" emptyIcon="📊" />
-        )}
-      </div>
+      {/* Table */}
+      {tab === "students" ? (
+        <DataTable
+          columns={studentCols}
+          data={students}
+          loading={loading}
+          searchKeys={["full_name", "student_number"]}
+          emptyMessage="No students currently enrolled in this class section."
+          emptyIcon="👥"
+        />
+      ) : (
+        <DataTable
+          columns={gradeCols}
+          data={grades}
+          loading={loading}
+          searchKeys={["student_name", "assessment_type"]}
+          emptyMessage="No assessment grades recorded for this class yet."
+          emptyIcon="📊"
+        />
+      )}
 
-      {/* Enroll modal */}
-      <Modal open={enrollModal} onClose={() => setEnrollModal(false)} title="Enroll Student" maxWidth={420}>
-        {allStuds.length === 0 ? (
-          <p style={{ color: "#6b6b80", fontSize: 14 }}>All students are already enrolled in this class.</p>
-        ) : (
-          <form onSubmit={handleEnroll} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div>
-              <label style={{ display: "block", fontSize: 12, color: "#9898b0", marginBottom: 6 }}>Select Student</label>
-              <select required value={enrollId} onChange={(e) => setEnrollId(e.target.value)} className="input-glow" style={{ width: "100%", padding: "11px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 10, color: "#e8e8f0", fontSize: 14, fontFamily: "var(--font-dm-sans)", outline: "none", appearance: "none" as any }}>
-                <option value="">— Select a student —</option>
-                {allStuds.map((s) => (
-                  <option key={s.id} value={s.id} style={{ background: "#13131a" }}>
-                    {s.user?.full_name ?? s.student_number} · {s.student_number}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setEnrollModal(false)} style={{ padding: "10px 18px", borderRadius: 9, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9898b0", cursor: "pointer", fontSize: 14 }}>Cancel</button>
-              <button type="submit" disabled={enrolling} className="shimmer-btn" style={{ padding: "10px 22px", border: "none", borderRadius: 9, color: "#fff", fontSize: 14, fontWeight: 600, cursor: enrolling ? "not-allowed" : "pointer", opacity: enrolling ? 0.7 : 1, fontFamily: "var(--font-syne)" }}>
-                {enrolling ? "Enrolling…" : "Enroll →"}
-              </button>
-            </div>
-          </form>
-        )}
+      {/* Enroll Modal */}
+      <Modal
+        open={enrollModal}
+        onClose={() => setEnrollModal(false)}
+        title="Enroll Student in Class"
+      >
+        <form onSubmit={handleEnroll} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-[#334155]">
+              Select Enrolled Student
+            </label>
+            <select
+              required
+              value={enrollId}
+              onChange={(e) => setEnrollId(e.target.value)}
+              className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
+            >
+              <option value="">Choose student to add…</option>
+              {allStuds.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.user?.full_name || s.student_number} ({s.student_number})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-[#e2e8f0]">
+            <button
+              type="button"
+              onClick={() => setEnrollModal(false)}
+              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={enrolling || !enrollId}
+              className="shimmer-btn rounded-xl px-5 py-2 text-xs font-bold shadow-sm"
+            >
+              {enrolling ? "Enrolling…" : "Enroll Student"}
+            </button>
+          </div>
+        </form>
       </Modal>
 
-      {/* Confirm remove */}
-      <Modal open={!!delStudent} onClose={() => setDelStudent(null)} title="Remove Student" maxWidth={380}>
-        <p style={{ color: "#9898b0", fontSize: 14, marginBottom: 20 }}>
-          Remove <strong style={{ color: "#e8e8f0" }}>{delStudent?.full_name}</strong> from this class?
-        </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={() => setDelStudent(null)} style={{ padding: "9px 18px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#9898b0", cursor: "pointer", fontSize: 14 }}>Cancel</button>
-          <button onClick={handleRemove} style={{ padding: "9px 18px", borderRadius: 8, background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>Remove</button>
-        </div>
-      </Modal>
+      {/* Remove Confirmation */}
+      {delStudent && (
+        <Modal open={true} onClose={() => setDelStudent(null)} title="Remove Student from Class" maxWidth={400}>
+          <p className="text-sm text-[#475569]">
+            Remove <strong className="text-[#0f172a]">{delStudent.full_name}</strong> from {cls?.class_name}?
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={() => setDelStudent(null)}
+              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRemove}
+              className="rounded-xl bg-[#dc2626] px-4 py-2 text-xs font-bold text-white shadow-xs"
+            >
+              Remove
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
 export default function ClassDetailPage() {
-  return <ToastProvider><ClassDetailContent /></ToastProvider>;
+  return (
+    <ToastProvider>
+      <ClassDetailContent />
+    </ToastProvider>
+  );
 }

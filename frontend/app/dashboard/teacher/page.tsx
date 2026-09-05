@@ -5,7 +5,7 @@ import Link from "next/link";
 import { get } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 
-function greeting() {
+function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
@@ -13,23 +13,35 @@ function greeting() {
 }
 
 function ClassCard({ cls }: { cls: any }) {
-  const colors = ["#6366f1","#8b5cf6","#ec4899","#10b981","#3b82f6","#f59e0b"];
-  const color = colors[(cls.class_name?.charCodeAt(0) ?? 0) % colors.length];
   return (
-    <div
-      className="stat-card"
-      style={{ padding: 20, background: "rgba(19,19,26,0.8)", borderRadius: 14, border: `1px solid ${color}33`, position: "relative", overflow: "hidden" }}
-    >
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: "14px 14px 0 0" }} />
-      <p style={{ fontFamily: "var(--font-syne)", fontSize: 15, fontWeight: 700, color: "#e8e8f0", marginBottom: 6 }}>{cls.class_name}</p>
-      <p style={{ fontSize: 12, color: "#6b6b80", marginBottom: 10 }}>
-        Grade {cls.grade_level} · Section {cls.section} · {cls.academic_year}
-      </p>
-      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <Link href="/attendance" style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: `${color}18`, border: `1px solid ${color}40`, color, fontSize: 12, fontWeight: 600, textDecoration: "none", textAlign: "center", transition: "background 0.2s" }}>
+    <div className="card p-6 flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between">
+          <span className="rounded-md bg-[#eaf2ff] px-2.5 py-1 text-[10px] font-bold text-[#1267e8]">
+            Grade {cls.grade_level} • Sec {cls.section}
+          </span>
+          <span className="text-xs text-[#94a3b8]">{cls.academic_year}</span>
+        </div>
+
+        <h3 className="mt-3 text-lg font-extrabold text-[#0b1f3a]">
+          {cls.class_name}
+        </h3>
+        <p className="mt-1 text-xs text-[#64748b]">
+          Room: {cls.room_number || "Main Building"} • {cls.enrolled_student_count ?? 0} Students
+        </p>
+      </div>
+
+      <div className="mt-6 flex items-center gap-2 border-t border-[#f1f5f9] pt-4">
+        <Link
+          href="/attendance"
+          className="flex-1 rounded-xl bg-[#1267e8] py-2 text-center text-xs font-bold text-white shadow-xs transition hover:bg-[#0d54c2]"
+        >
           Attendance
         </Link>
-        <Link href="/grades" style={{ flex: 1, padding: "8px 12px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9898b0", fontSize: 12, fontWeight: 600, textDecoration: "none", textAlign: "center" }}>
+        <Link
+          href="/grades"
+          className="flex-1 rounded-xl border border-[#cbd5e1] bg-white py-2 text-center text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
+        >
           Grades
         </Link>
       </div>
@@ -37,80 +49,77 @@ function ClassCard({ cls }: { cls: any }) {
   );
 }
 
-function SkeletonClassCard() {
-  return (
-    <div style={{ padding: 20, background: "rgba(19,19,26,0.8)", borderRadius: 14, border: "1px solid rgba(99,102,241,0.1)" }}>
-      <div className="skeleton" style={{ width: "70%", height: 16, marginBottom: 10 }} />
-      <div className="skeleton" style={{ width: "50%", height: 11, marginBottom: 16 }} />
-      <div style={{ display: "flex", gap: 8 }}>
-        <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
-        <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
-      </div>
-    </div>
-  );
-}
-
 export default function TeacherDashboardPage() {
   const user = getUser();
-  const [classes, setClasses]   = useState<any[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState("");
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    get<any[]>("/classes")
-      .then((data) => setClasses(Array.isArray(data) ? data : []))
-      .catch((e)   => setError(e.message))
-      .finally(()  => setLoading(false));
+    async function loadClasses() {
+      try {
+        const data = await get<any[]>("/classes");
+        setClasses(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load classes:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadClasses();
   }, []);
 
   return (
-    <div className="animate-page-in">
-      {/* Greeting */}
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontFamily: "var(--font-syne)", fontSize: 26, fontWeight: 800, marginBottom: 4 }}>
-          <span className="gradient-text">{greeting()}</span>
-          <span style={{ color: "#e8e8f0" }}>, {user?.full_name.split(" ")[0] ?? "Teacher"} 👋</span>
-        </h2>
-        <p style={{ color: "#6b6b80", fontSize: 14 }}>Here are your assigned classes for today.</p>
+    <div className="space-y-8">
+      {/* Welcome Banner */}
+      <div className="rounded-3xl border border-[#e2e8f0] bg-white p-7 shadow-xs">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#1267e8]">
+          Faculty Portal
+        </span>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-[#0b1f3a] sm:text-3xl">
+          {getGreeting()}, {user?.full_name || "Instructor"}
+        </h1>
+        <p className="mt-1 text-xs text-[#64748b]">
+          Manage your assigned classes, take daily attendance, and submit student assessment marks.
+        </p>
       </div>
 
-      {/* Quick actions */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
-        <Link
-          href={classes.length === 1 ? `/attendance?classId=${classes[0].id}` : "/attendance"}
-          className="shimmer-btn"
-          style={{ padding: "12px 22px", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-syne)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-          Take Attendance
-        </Link>
-        <Link href="/grades" style={{ padding: "12px 22px", borderRadius: 12, color: "#e8e8f0", fontSize: 14, fontWeight: 600, fontFamily: "var(--font-syne)", textDecoration: "none", background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)", display: "inline-flex", alignItems: "center", gap: 8, transition: "background 0.2s" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.18)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.1)")}
-        >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /><line x1="2" y1="20" x2="22" y2="20" /></svg>
-          Enter Grades
-        </Link>
-      </div>
-
-      {/* My classes */}
-      <h3 style={{ fontFamily: "var(--font-syne)", fontSize: 16, fontWeight: 700, color: "#e8e8f0", marginBottom: 16 }}>
-        My Classes
-      </h3>
-
-      {error && (
-        <div style={{ padding: "12px 16px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#fca5a5", fontSize: 14, marginBottom: 16 }}>
-          ⚠️ {error}
+      {/* Classes Grid */}
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-[#0b1f3a]">
+            Your Classes & Sections
+          </h2>
+          <span className="text-xs font-semibold text-[#64748b]">
+            {classes.length} {classes.length === 1 ? "Class" : "Classes"} Assigned
+          </span>
         </div>
-      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-        {loading
-          ? [0,1,2].map((i) => <SkeletonClassCard key={i} />)
-          : classes.length === 0
-            ? <p style={{ color: "#6b6b80", fontSize: 14 }}>No classes assigned yet.</p>
-            : classes.map((cls) => <ClassCard key={cls.id} cls={cls} />)
-        }
+        {loading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card p-6">
+                <div className="skeleton h-4 w-24 mb-3" />
+                <div className="skeleton h-6 w-40 mb-2" />
+                <div className="skeleton h-3 w-32 mb-6" />
+                <div className="skeleton h-9 w-full rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : classes.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#cbd5e1] bg-white p-12 text-center">
+            <div className="text-4xl">📚</div>
+            <p className="mt-2 text-sm font-bold text-[#0b1f3a]">No classes assigned yet</p>
+            <p className="mt-1 text-xs text-[#64748b]">
+              Your class assignments will appear here once configured by the administration.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {classes.map((cls) => (
+              <ClassCard key={cls.id} cls={cls} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
