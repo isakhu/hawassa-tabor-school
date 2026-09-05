@@ -24,49 +24,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     let active = true;
+    let resolved = false;
 
-    const checkAuth = () => {
-      try {
-        if (!isAuthenticated()) {
-          router.replace("/login");
-          return;
-        }
-
+    try {
+      if (!isAuthenticated()) {
+        resolved = true;
+        router.replace("/login");
+      } else {
         const currentUser = getUser();
         if (!currentUser || !currentUser.role || !currentUser.email) {
+          resolved = true;
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
           router.replace("/login");
-          return;
-        }
-
-        if (active) {
+        } else if (active) {
+          resolved = true;
           setUser(currentUser);
           setAuthChecking(false);
         }
-      } catch {
-        router.replace("/login");
       }
-    };
+    } catch {
+      resolved = true;
+      router.replace("/login");
+    }
 
-    checkAuth();
-
-    // Never leave a broken/stale browser session on an endless spinner.
     const timeout = window.setTimeout(() => {
-      if (active && !user) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
-        router.replace("/login");
-      }
+      if (!active || resolved) return;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+      router.replace("/login");
     }, 3000);
 
     return () => {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [router, user]);
+  }, [router]);
 
   if (authChecking || !user) {
     return (
