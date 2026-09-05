@@ -20,24 +20,59 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.replace("/login");
-      return;
-    }
-    const currentUser = getUser();
-    if (!currentUser) {
-      router.replace("/login");
-      return;
-    }
-    setUser(currentUser);
-  }, [router]);
+    let active = true;
 
-  if (!user) {
+    const checkAuth = () => {
+      try {
+        if (!isAuthenticated()) {
+          router.replace("/login");
+          return;
+        }
+
+        const currentUser = getUser();
+        if (!currentUser || !currentUser.role || !currentUser.email) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+          router.replace("/login");
+          return;
+        }
+
+        if (active) {
+          setUser(currentUser);
+          setAuthChecking(false);
+        }
+      } catch {
+        router.replace("/login");
+      }
+    };
+
+    checkAuth();
+
+    // Never leave a broken/stale browser session on an endless spinner.
+    const timeout = window.setTimeout(() => {
+      if (active && !user) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+        router.replace("/login");
+      }
+    }, 3000);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [router, user]);
+
+  if (authChecking || !user) {
     return (
-      <div className="flex h-dvh items-center justify-center bg-[#f6f9fd]">
-        <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#cfe0f7] border-t-[#1267e8]" aria-label="Loading" />
+      <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-[#f6f9fd] text-[#71849a]">
+        <div className="h-9 w-9 animate-spin rounded-full border-[3px] border-[#cfe0f7] border-t-[#1267e8]" aria-label="Checking your session" />
+        <p className="text-sm">Checking your session…</p>
       </div>
     );
   }
