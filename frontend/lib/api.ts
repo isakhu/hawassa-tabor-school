@@ -1,21 +1,25 @@
 import { API_BASE_URL, ROUTES, STORAGE_KEYS } from "@/lib/constants";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface FetchOptions extends RequestInit {
   body?: any;
+  timeoutMs?: number;
 }
 
-// ─── Core fetch wrapper ───────────────────────────────────────────────────────
+const DEFAULT_TIMEOUT_MS = 20_000;
 
-/**
- * apiFetch — typed fetch wrapper for the FastAPI backend.
- *
- * - Prepends API_BASE_URL to every request
- * - Reads JWT from localStorage and injects Authorization: Bearer header
- * - On 401: clears localStorage and redirects to /login
- * - Returns parsed JSON of type T
- */
+function createTimeoutSignal(timeoutMs: number, existing?: AbortSignal | null): AbortSignal {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  if (existing) {
+    if (existing.aborted) controller.abort();
+    else existing.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+
+  controller.signal.addEventListener("abort", () => window.clearTimeout(timeout), { once: true });
+  return controller.signal;
+}
+
 export async function apiFetch<T = unknown>(
   endpoint: string,
   options: FetchOptions = {}
@@ -31,16 +35,32 @@ export async function apiFetch<T = unknown>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...requestOptions } = options;
+  const signal =
+    typeof window !== "undefined"
+      ? createTimeoutSignal(timeoutMs, options.signal)
+      : options.signal;
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...requestOptions,
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      signal,
+    });
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The school server took too long to respond. Please try again.");
+    }
+    throw new Error("Unable to connect to the school server. Please check your connection and try again.");
+  }
 
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
+      document.cookie = `${STORAGE_KEYS.TOKEN}=; path=/; max-age=0; SameSite=Lax`;
       window.location.href = ROUTES.LOGIN;
     }
     throw new Error("Session expired. Please log in again.");
@@ -50,37 +70,53 @@ export async function apiFetch<T = unknown>(
     return {} as T;
   }
 
-  const data = await response.json();
+  const contentType = response.headers.get("content-type") ?? "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
 
   if (!response.ok) {
     const message =
       typeof data?.detail === "string"
         ? data.detail
-        : JSON.stringify(data?.detail ?? data);
-    throw new Error(message);
+        : typeof data === "string" && data
+          ? data
+          : JSON.stringify(data?.detail ?? data);
+    throw new Error(message || `Request failed with status ${response.status}.`);
   }
 
   return data as T;
 }
 
-/** Download an authenticated binary file from the FastAPI backend. */
 export async function downloadFile(endpoint: string, fallbackFilename: string): Promise<void> {
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem(STORAGE_KEYS.TOKEN)
       : null;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method: "GET",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  let response: Response;
+  try {
+    const signal =
+      typeof window !== "undefined" ? createTimeoutSignal(30_000) : undefined;
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      signal,
+    });
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("The download took too long to start. Please try again.");
+    }
+    throw new Error("Unable to connect to the school server.");
+  }
 
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
+      document.cookie = `${STORAGE_KEYS.TOKEN}=; path=/; max-age=0; SameSite=Lax`;
       window.location.href = ROUTES.LOGIN;
     }
     throw new Error("Session expired. Please log in again.");
@@ -110,8 +146,6 @@ export async function downloadFile(endpoint: string, fallbackFilename: string): 
   anchor.remove();
   URL.revokeObjectURL(url);
 }
-
-// ─── Typed helpers ────────────────────────────────────────────────────────────
 
 export function get<T = unknown>(endpoint: string): Promise<T> {
   return apiFetch<T>(endpoint, { method: "GET" });
