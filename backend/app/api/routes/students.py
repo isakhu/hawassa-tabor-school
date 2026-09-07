@@ -24,6 +24,7 @@ from app.models.user import Role, User
 from app.schemas.student import (
     StudentCreate,
     StudentDetailResponse,
+    StudentListResponse,
     StudentResponse,
     StudentUpdate,
 )
@@ -74,7 +75,6 @@ async def create_student(
     Create a student profile and link it to an existing user account.
     The linked user must have role=STUDENT and must not already have a profile.
     """
-    # Verify the user exists and has the correct role
     user_result = await db.execute(select(User).where(User.id == payload.user_id))
     user = user_result.scalar_one_or_none()
     if user is None:
@@ -88,7 +88,6 @@ async def create_student(
             detail="The linked user must have role=STUDENT.",
         )
 
-    # Check the user doesn't already have a student profile
     existing = await db.execute(
         select(Student).where(Student.user_id == payload.user_id)
     )
@@ -98,7 +97,6 @@ async def create_student(
             detail="This user already has a student profile.",
         )
 
-    # Check student_number uniqueness
     dup = await db.execute(
         select(Student).where(Student.student_number == payload.student_number)
     )
@@ -121,17 +119,21 @@ async def create_student(
 
 @router.get(
     "",
-    response_model=list[StudentResponse],
+    response_model=list[StudentListResponse],
     summary="List all students (Admin and Teacher only)",
 )
 async def list_students(
     db: Annotated[AsyncSession, Depends(get_db)],
     _staff: Annotated[User, Depends(require_teacher)],
-) -> list[StudentResponse]:
-    """Return all student profiles. Accessible by Admin and Teacher."""
-    result = await db.execute(select(Student).order_by(Student.student_number))
+) -> list[StudentListResponse]:
+    """Return all student profiles with linked account data for staff views."""
+    result = await db.execute(
+        select(Student)
+        .options(selectinload(Student.user))
+        .order_by(Student.student_number)
+    )
     students = result.scalars().all()
-    return [StudentResponse.model_validate(s) for s in students]
+    return [StudentListResponse.model_validate(s) for s in students]
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +157,6 @@ async def get_student(
     """
     student = await _get_student_or_404(student_id, db, load_user=True)
 
-    # Students may only view their own profile
     if current_user.role == Role.STUDENT and student.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
