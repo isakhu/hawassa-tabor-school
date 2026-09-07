@@ -58,10 +58,17 @@ class TeacherUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 class TeacherResponse(TeacherBase):
-    """Teacher profile returned by list and create endpoints."""
+    """Teacher profile returned by create/update endpoints."""
     id: uuid.UUID
     user_id: uuid.UUID
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TeacherListResponse(TeacherResponse):
+    """Teacher profile plus the linked account needed by the staff list view."""
+    user: UserResponse
 
     model_config = {"from_attributes": True}
 
