@@ -26,6 +26,7 @@ from app.models.user import Role, User
 from app.schemas.teacher import (
     TeacherCreate,
     TeacherDetailResponse,
+    TeacherListResponse,
     TeacherResponse,
     TeacherUpdate,
 )
@@ -76,7 +77,6 @@ async def create_teacher(
     Create a teacher profile and link it to an existing user account.
     The linked user must have role=TEACHER and must not already have a profile.
     """
-    # Verify the linked user exists and is a TEACHER
     user_result = await db.execute(select(User).where(User.id == payload.user_id))
     user = user_result.scalar_one_or_none()
     if user is None:
@@ -90,7 +90,6 @@ async def create_teacher(
             detail="The linked user must have role=TEACHER.",
         )
 
-    # Ensure no duplicate profile for this user
     existing_profile = await db.execute(
         select(Teacher).where(Teacher.user_id == payload.user_id)
     )
@@ -100,7 +99,6 @@ async def create_teacher(
             detail="This user already has a teacher profile.",
         )
 
-    # Ensure teacher_number is globally unique
     dup_number = await db.execute(
         select(Teacher).where(Teacher.teacher_number == payload.teacher_number)
     )
@@ -123,22 +121,24 @@ async def create_teacher(
 
 @router.get(
     "",
-    response_model=list[TeacherResponse],
+    response_model=list[TeacherListResponse],
     summary="List all teachers (Admin only)",
 )
 async def list_teachers(
     db: Annotated[AsyncSession, Depends(get_db)],
     _admin: Annotated[User, Depends(require_admin)],
-) -> list[TeacherResponse]:
+) -> list[TeacherListResponse]:
     """
-    Return all teacher profiles ordered by teacher_number.
+    Return all teacher profiles with linked account data for the staff list view.
     Restricted to ADMIN — teachers should not enumerate each other.
     """
     result = await db.execute(
-        select(Teacher).order_by(Teacher.teacher_number)
+        select(Teacher)
+        .options(selectinload(Teacher.user))
+        .order_by(Teacher.teacher_number)
     )
     teachers = result.scalars().all()
-    return [TeacherResponse.model_validate(t) for t in teachers]
+    return [TeacherListResponse.model_validate(t) for t in teachers]
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +161,6 @@ async def get_teacher(
     - TEACHER can only fetch their own profile.
     - STUDENT gets 403.
     """
-    # Block students entirely
     if current_user.role == Role.STUDENT:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -170,7 +169,6 @@ async def get_teacher(
 
     teacher = await _get_teacher_or_404(teacher_id, db, load_user=True)
 
-    # Teachers can only view their own profile
     if current_user.role == Role.TEACHER and teacher.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
