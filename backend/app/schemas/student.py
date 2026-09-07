@@ -56,11 +56,18 @@ class StudentUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 class StudentResponse(StudentBase):
-    """Full student profile returned by GET and POST endpoints."""
+    """Student profile returned by create/update endpoints."""
     id: uuid.UUID
     user_id: uuid.UUID
     enrollment_date: datetime
     created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class StudentListResponse(StudentResponse):
+    """Student profile plus the linked account needed by staff list views."""
+    user: UserResponse
 
     model_config = {"from_attributes": True}
 
