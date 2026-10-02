@@ -5,6 +5,7 @@ import { get, post, uploadFile } from "@/lib/api";
 import { getUser } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 import { useRouter } from "next/navigation";
+import DashboardShell from "@/components/DashboardShell";
 
 type Student = {
   id: string;
