@@ -17,6 +17,7 @@ A full-stack school management platform built with **Next.js 14, TypeScript, Fas
 - **Grades** — teacher entry, submission, class-head review, approval, and reports
 - **Final Results** — approved-subject final result calculation with PDF download
 - **Responsive UI** — Next.js App Router interface for desktop and mobile
+- **Payment Verification** — Admin fee records with links.et receipt URL and screenshot verification
 
 ## Roles
 
@@ -133,6 +134,8 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
 ```
 
 Do not commit `.env`, `.env.local`, or other secret files.
+
+For payment receipt verification, configure the FastAPI backend with `LINKS_ET_API_KEY`. Keep this value server-side; never expose it through a `NEXT_PUBLIC_*` variable or commit it to Git.
 
 ## Manager Demo Account
 
