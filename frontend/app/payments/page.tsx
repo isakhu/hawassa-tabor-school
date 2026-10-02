@@ -128,6 +128,7 @@ export default function PaymentsPage() {
   const pending = payments.filter((p) => p.verification_status === "PENDING" || p.verification_status === "VERIFYING");
 
   return (
+    <DashboardShell>
     <main className="space-y-6 p-5 sm:p-7 lg:p-9">
       <section className="rounded-2xl border border-[#dbe5f0] bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -241,6 +242,7 @@ export default function PaymentsPage() {
           </div>
         </section>
       </section>
-    </main>
+      </main>
+    </DashboardShell>
   );
 }
