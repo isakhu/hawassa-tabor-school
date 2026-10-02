@@ -1,11 +1,4 @@
-"""
-Application configuration.
-Loads and validates environment variables using Pydantic BaseSettings.
-
-Development values may come from backend/.env.
-Production values must be supplied by the hosting environment.
-"""
-
+"""Application configuration."""
 import os
 
 from pydantic import field_validator, model_validator
@@ -13,26 +6,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Database
     DATABASE_URL: str
-
-    # Security
     SECRET_KEY: str = "changeme"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-
-    # CORS
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
-
-    # Application
     ENVIRONMENT: str = "development"
     DEMO_SEED_DATA: bool = False
 
-    # Initial administrator credentials.
-    # Development defaults are retained for local setup only.
     ADMIN_EMAIL: str = "yzak"
     ADMIN_PASSWORD: str = "0800"
     ADMIN_FULL_NAME: str = "Tabor Admin"
+
+    # Server-side only. Never expose this through NEXT_PUBLIC_* variables.
+    LINKS_ET_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -76,7 +63,6 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        """Return configured CORS origins without empty values."""
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     @property

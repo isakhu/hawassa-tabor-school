@@ -162,3 +162,41 @@ export function put<T = unknown>(endpoint: string, body: unknown): Promise<T> {
 export function del<T = unknown>(endpoint: string): Promise<T> {
   return apiFetch<T>(endpoint, { method: "DELETE" });
 }
+
+
+export async function uploadFile<T = unknown>(
+  endpoint: string,
+  file: File,
+  fieldName = "file"
+): Promise<T> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem(STORAGE_KEYS.TOKEN)
+      : null;
+
+  const form = new FormData();
+  form.append(fieldName, file);
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  });
+
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      window.location.href = ROUTES.LOGIN;
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof data?.detail === "string" ? data.detail : "Upload failed.");
+  }
+  return data as T;
+}

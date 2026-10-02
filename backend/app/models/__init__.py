@@ -1,5 +1,4 @@
 """Models package. Imports all ORM models so they are registered on Base.metadata."""
-
 from app.models.user import Role, User
 from app.models.student import Student
 from app.models.teacher import Teacher
@@ -7,6 +6,7 @@ from app.models.class_model import ClassEnrollment, SchoolClass
 from app.models.academic import CurriculumSubject, Subject, TeacherAssignment
 from app.models.attendance import Attendance, AttendanceStatus
 from app.models.grade import AssessmentType, Grade
+from app.models.payment import Payment, PaymentStatus
 
 __all__ = [
     "Role", "User",
@@ -15,4 +15,5 @@ __all__ = [
     "Subject", "CurriculumSubject", "TeacherAssignment",
     "Attendance", "AttendanceStatus",
     "Grade", "AssessmentType",
+    "Payment", "PaymentStatus",
 ]

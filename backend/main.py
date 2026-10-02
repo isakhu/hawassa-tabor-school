@@ -19,6 +19,7 @@ from app.api.routes.class_head_dashboard import router as class_head_dashboard_r
 from app.api.routes.student_portal import router as student_portal_router
 from app.api.routes.class_head_attendance import router as class_head_attendance_router
 from app.api.routes.grade_submission import router as grade_submission_router
+from app.api.routes.payments import router as payments_router
 
 
 async def seed_admin():
@@ -75,20 +76,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="School Management System API",
-    description="Backend API for students, teachers, classes, grades, attendance, and academic administration.",
+    description="Backend API for students, teachers, classes, grades, attendance, and payment verification.",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
 )
 
-# Keep explicit configured origins for local/custom deployments, and also
-# support Vercel preview/production deployments without requiring a backend
-# code change for every new Vercel deployment URL.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
-    allow_origin_regex=r"^https://([a-zA-Z0-9-]+\.)?vercel\.app$",
+    allow_origin_regex=r"^https://([a-zA-Z0-9-]+.)?vercel.app$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
@@ -108,6 +106,7 @@ for router in (
     student_portal_router,
     class_head_attendance_router,
     grade_submission_router,
+    payments_router,
 ):
     app.include_router(router, prefix="/api/v1")
 

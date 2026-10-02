@@ -9,6 +9,9 @@ pydantic-settings==2.2.1
 # ── Form / file uploads ───────────────────────────────────────────────────
 python-multipart==0.0.9
 
+# ── HTTP client for server-side payment verification ─────────────────────
+httpx==0.27.0
+
 # ── PostgreSQL (async) ────────────────────────────────────────────────────
 asyncpg==0.29.0
 sqlalchemy==2.0.30

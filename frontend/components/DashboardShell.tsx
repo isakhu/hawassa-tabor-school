@@ -13,6 +13,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.includes("/classes"))    return "Classes & Sections";
   if (pathname.includes("/attendance")) return "Attendance Management";
   if (pathname.includes("/grades"))     return "Academic Grades";
+  if (pathname.includes("/payments"))   return "Payment Verification";
   if (pathname.includes("/dashboard/admin"))   return "Administrator Dashboard";
   if (pathname.includes("/dashboard/teacher")) return "Teacher Portal";
   if (pathname.includes("/dashboard/student")) return "Student Portal";
