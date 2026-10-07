@@ -405,7 +405,7 @@ function StudentsContent() {
                   <button type="button" onClick={() => setForm({...form, password: Math.floor(100000 + Math.random() * 900000).toString()})} className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded">Generate</button>
                 )}
               </div>
-              <input required={!editing} type="password" value={form.password} onChange={(e)=>setForm({...form, password: e.target.value.replace(/\D/g,"")})} placeholder="Password (Digits)" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+              <input required={!editing} type="text" value={form.password} onChange={(e)=>setForm({...form, password: e.target.value.replace(/\D/g,"")})} placeholder="Password (Digits)" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
             </div>
           </div>
 
