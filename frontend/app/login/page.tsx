@@ -32,18 +32,7 @@ export default function LoginPage() {
           password,
         });
       } catch (err: unknown) {
-        console.warn("Backend login failed, using developer bypass fallback.", err);
-        data = {
-          access_token: "mockHeader.eyJyb2xlIjoiQURNSU4ifQ.mockSignature",
-          user: { 
-            id: "1", 
-            full_name: "Yisha Khak", 
-            email: username.trim(), 
-            role: ROLES.ADMIN, 
-            is_active: true, 
-            created_at: new Date().toISOString() 
-          }
-        };
+        throw err;
       }
 
       if (!data?.access_token || !data?.user) {
