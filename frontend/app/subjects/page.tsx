@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BookMarked } from "lucide-react";
+import Modal from "@/components/Modal";
 
 interface Subject {
   id: string;
@@ -20,12 +21,14 @@ const COLORS = [
 ];
 
 export default function SubjectsPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-2">
         <h1 className="text-2xl font-bold text-slate-900">Subjects</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm transition-colors">
+        <button onClick={() => setModalOpen(true)} className="bg-[#1e40af] hover:bg-[#1e3a8a] text-white font-semibold text-sm px-4 py-2 rounded-md shadow-sm transition-colors">
           Add Subjects
         </button>
       </div>
@@ -58,7 +61,61 @@ export default function SubjectsPage() {
             </div>
           );
         })}
+        {mockSubjects.length === 0 && (
+          <div className="col-span-full text-center py-10 text-slate-500 text-sm">
+            No subjects found.
+          </div>
+        )}
       </div>
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Add Subject"
+        maxWidth={650}
+      >
+        <form onSubmit={(e) => { e.preventDefault(); setModalOpen(false); }} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Subject Name</label>
+              <input placeholder="Name" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Short Name</label>
+              <input placeholder="Short Name" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Subject Code</label>
+              <input placeholder="Subject Code" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Department</label>
+              <select className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-400">
+                <option>Select Department(s)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Subject Teacher(s)</label>
+            <select className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-400">
+              <option>Select Teacher(s)</option>
+            </select>
+          </div>
+
+          <div className="flex pt-4">
+             <button
+               type="submit"
+               className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-md px-6 py-2 text-sm font-semibold transition-colors"
+             >
+               Submit
+             </button>
+           </div>
+        </form>
+      </Modal>
     </div>
   );
 }

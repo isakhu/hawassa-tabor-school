@@ -276,79 +276,80 @@ function StudentsContent() {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Student Details" : "Enroll New Student"}
+        title={editing ? "Edit Student" : "Register Student"}
+        maxWidth={850}
       >
+        <div className="flex gap-6 mb-6 border-b border-gray-200">
+          <button className="pb-2 border-b-2 border-blue-600 text-blue-600 font-semibold text-sm">Single Admission</button>
+          <button className="pb-2 text-gray-500 hover:text-gray-700 font-semibold text-sm">Bulk Admission</button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          {!editing && (
-            <>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">
-                  Full Name
-                </label>
-                <input
-                  required
-                  value={form.full_name}
-                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                  placeholder="e.g. Abebe Kebede"
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                />
+          <div className="flex gap-6">
+            <div className="w-40 flex-shrink-0">
+              <div className="w-full aspect-square bg-gray-200 rounded-xl flex items-center justify-center relative">
+                <svg className="w-24 h-24 text-white mt-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                </svg>
+                <button type="button" className="absolute top-2 right-2 bg-white rounded-md p-1.5 shadow hover:bg-gray-50">
+                   <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 15V5"/></svg>
+                </button>
               </div>
+            </div>
 
+            <div className="flex-1 grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">
-                  School Email / Username
-                </label>
-                <input
-                  required
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="student@school.edu"
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                />
+                <label className="mb-1 block text-xs text-gray-500">First name</label>
+                <input required value={form.full_name} onChange={(e) => setForm({...form, full_name: e.target.value})} placeholder="First Name" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
               </div>
-
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">
-                  Password / PIN (digits only)
-                </label>
-                <input
-                  required
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value.replace(/\D/g, "") })}
-                  placeholder="e.g. 123456"
-                  inputMode="numeric"
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Last name</label>
+                <input placeholder="Last Name" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
               </div>
-
               <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">
-                  Student ID Number
-                </label>
-                <input
-                  required
-                  value={form.student_number}
-                  onChange={(e) => setForm({ ...form, student_number: e.target.value })}
-                  placeholder="STU-2024-001"
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                />
+                <label className="mb-1 block text-xs text-gray-500">Surname</label>
+                <input placeholder="Surname" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
               </div>
-            </>
-          )}
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Gender</label>
+                <select className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-600">
+                  <option></option>
+                  <option>Male</option>
+                  <option>Female</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Date Of Birth</label>
+                <input type="date" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none text-gray-400" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Age</label>
+                <input placeholder="Age" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-gray-50" readOnly />
+              </div>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">
-                Grade Level
-              </label>
-              <select
-                required
-                value={form.grade_level}
-                onChange={(e) => setForm({ ...form, grade_level: e.target.value })}
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              >
+              <label className="mb-1 block text-xs text-gray-500">Parent(s)</label>
+              <select className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-400">
+                <option>Select Parent(s)</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Admission Date</label>
+              <input type="date" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none text-gray-400" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Roll Number</label>
+              <input required value={form.student_number} onChange={(e)=>setForm({...form, student_number: e.target.value})} placeholder="Roll Number" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Grade</label>
+              <select required value={form.grade_level} onChange={(e)=>setForm({...form, grade_level: e.target.value})} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-600">
                 <option value="Kindergarten">Kindergarten</option>
                 <option value="Grade 1">Grade 1</option>
                 <option value="Grade 2">Grade 2</option>
@@ -364,38 +365,64 @@ function StudentsContent() {
                 <option value="Grade 12">Grade 12</option>
               </select>
             </div>
-
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">
-                Section
-              </label>
-              <input
-                required
-                value={form.section}
-                onChange={(e) => setForm({ ...form, section: e.target.value })}
-                placeholder="A, B, or C"
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              >
-              </input>
+              <label className="mb-1 block text-xs text-gray-500">Section</label>
+              <input required value={form.section} onChange={(e)=>setForm({...form, section: e.target.value})} placeholder="Section (A, B, C)" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Address</label>
+              <input placeholder="Address" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-[#e2e8f0]">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="shimmer-btn rounded-xl px-5 py-2 text-xs font-bold shadow-sm"
-            >
-              {saving ? "Saving…" : editing ? "Update Details" : "Enroll Student"}
-            </button>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Nationality</label>
+              <input defaultValue="Kenyan" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Religion</label>
+              <select className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none bg-white text-gray-600"><option></option></select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Student learning status</label>
+              <div className="flex items-center gap-2 h-9">
+                <input type="checkbox" defaultChecked className="rounded border-gray-300" />
+                <span className="text-sm">Is Active?</span>
+              </div>
+            </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4 items-end">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Email (Username)</label>
+              <input type="email" required value={form.email} onChange={(e)=>setForm({...form, email: e.target.value})} placeholder="Email" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs text-gray-500">Password</label>
+                {!editing && (
+                  <button type="button" onClick={() => setForm({...form, password: Math.floor(100000 + Math.random() * 900000).toString()})} className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded">Generate</button>
+                )}
+              </div>
+              <input required={!editing} type="password" value={form.password} onChange={(e)=>setForm({...form, password: e.target.value.replace(/\D/g,"")})} placeholder="Password (Digits)" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-gray-500">Additional Info</label>
+            <textarea placeholder="Additional info about the student" rows={3} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none resize-none"></textarea>
+          </div>
+
+          <div className="flex pt-4">
+             <button
+               type="submit"
+               disabled={saving}
+               className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-md px-6 py-2 text-sm font-semibold transition-colors"
+             >
+               {saving ? "Saving…" : editing ? "Update" : "Submit"}
+             </button>
+           </div>
         </form>
       </Modal>
 

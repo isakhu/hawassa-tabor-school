@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import DataTable, { Column } from "@/components/DataTable";
+import Modal from "@/components/Modal";
 
 interface Assignment {
   id: string;
@@ -14,6 +16,8 @@ interface Assignment {
 const mockAssignments: Assignment[] = [];
 
 export default function AssignmentsPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const columns: Column<Assignment>[] = [
     {
       key: "type",
@@ -60,7 +64,7 @@ export default function AssignmentsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-2 px-2">
         <h1 className="text-2xl font-bold text-slate-900">Assignments</h1>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm transition-colors">
+        <button onClick={() => setModalOpen(true)} className="bg-[#1e40af] hover:bg-[#1e3a8a] text-white font-semibold text-sm px-4 py-2 rounded-md shadow-sm transition-colors">
           Add Assignment
         </button>
       </div>
@@ -69,6 +73,63 @@ export default function AssignmentsPage() {
         columns={columns}
         data={mockAssignments}
       />
+
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Add Assignment" maxWidth={750}>
+        <form onSubmit={(e) => { e.preventDefault(); setModalOpen(false); }} className="space-y-6 pt-2">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assignment Type *</label>
+              <select required className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white text-gray-500">
+                <option value=""></option>
+                <option value="Homework">Homework</option>
+                <option value="Classwork">Classwork</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Grades</label>
+              <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white text-gray-400">
+                <option value="">Select Grade(s)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="text-center font-bold text-slate-600 text-sm mt-4">Assignment Subjects</div>
+          
+          <div className="border border-slate-200 rounded-xl p-5 space-y-4 bg-white">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Subjects *</label>
+              <select required className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 bg-white text-gray-400">
+                <option value="">Subject</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Date</label>
+              <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Deadline Date</label>
+              <input type="date" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Start Time</label>
+              <input type="time" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">End Time</label>
+              <input type="time" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-400" />
+            </div>
+          </div>
+
+          <div className="flex pt-2">
+             <button
+               type="submit"
+               className="bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-md px-6 py-2 text-sm font-semibold transition-colors"
+             >
+               Submit
+             </button>
+           </div>
+        </form>
+      </Modal>
     </div>
   );
 }
