@@ -1,493 +1,183 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { del, get, post, put } from "@/lib/api";
-import { getUser } from "@/lib/auth";
-import { ROLES } from "@/lib/constants";
-import DataTable, { Column } from "@/components/DataTable";
+import { useState } from "react";
+import { BookMarked, Trash2, Plus, X } from "lucide-react";
 import Modal from "@/components/Modal";
-import { ToastProvider, useToast } from "@/components/Toast";
 
 interface Grade {
   id: string;
-  student_id: string;
-  class_id: string;
-  assessment_type: string;
-  term: string;
-  score: number;
-  max_score: number;
-  percentage: number;
-  grade_letter: string;
-  comments?: string;
-  created_at: string;
-  student?: { student_number: string; user?: { full_name: string } };
-  school_class?: { class_name: string };
-  student_name?: string;
-  class_name?: string;
+  name: string;
+  stream: string;
+  teacher: string | null;
+  students: number;
 }
 
-interface SchoolClass {
-  id: string;
-  class_name: string;
-}
+const mockGrades: Grade[] = [];
 
-interface Student {
-  id: string;
-  student_number: string;
-  user?: { full_name: string };
-  full_name?: string;
-}
+const COLORS = [
+  { bg: "bg-red-100", text: "text-red-700", border: "border-red-200" },
+  { bg: "bg-green-100", text: "text-green-700", border: "border-green-200" },
+  { bg: "bg-sky-100", text: "text-sky-700", border: "border-sky-200" },
+  { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-200" },
+];
 
-function GradeBadge({ letter }: { letter: string }) {
-  const l = (letter ?? "F")[0];
-  const cfg = {
-    A: { bg: "#ecfdf5", color: "#059669", border: "#a7f3d0" },
-    B: { bg: "#eff6ff", color: "#1d4ed8", border: "#bfdbfe" },
-    C: { bg: "#fffbeb", color: "#b45309", border: "#fde68a" },
-    D: { bg: "#fff1f2", color: "#be123c", border: "#fecdd3" },
-    F: { bg: "#fef2f2", color: "#b91c1c", border: "#fecaca" },
-  }[l] ?? { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0" };
-
-  return (
-    <span
-      style={{ backgroundColor: cfg.bg, color: cfg.color, borderColor: cfg.border }}
-      className="inline-block rounded-md border px-2.5 py-0.5 text-xs font-bold"
-    >
-      {letter || "—"}
-    </span>
-  );
-}
-
-const ASSESSMENT_TYPES = ["EXAM", "QUIZ", "ASSIGNMENT", "PROJECT"];
-
-function GradesContent() {
-  const router = useRouter();
-  const user = getUser();
-  const toast = useToast();
-  const isAdmin = user?.role === ROLES.ADMIN;
-  const isTeacher = user?.role === ROLES.TEACHER;
-  const canManage = isAdmin || isTeacher;
-
-  const [grades, setGrades] = useState<Grade[]>([]);
-  const [classes, setClasses] = useState<SchoolClass[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Grade | null>(null);
-  const [delTarget, setDelTarget] = useState<Grade | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  const [form, setForm] = useState({
-    student_id: "",
-    class_id: "",
-    assessment_type: "EXAM",
-    term: "Term 1",
-    score: 85,
-    max_score: 100,
-    comments: "",
-  });
-
-  useEffect(() => {
-    if (!user) {
-      router.replace("/login");
-      return;
-    }
-    loadData();
-  }, []);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [gradesData, classesData, studentsData] = await Promise.all([
-        get<Grade[]>("/grades"),
-        get<SchoolClass[]>("/classes"),
-        get<Student[]>("/students"),
-      ]);
-
-      const flat = (Array.isArray(gradesData) ? gradesData : []).map((g) => ({
-        ...g,
-        student_name: g.student?.user?.full_name ?? g.student?.student_number ?? "—",
-        class_name: g.school_class?.class_name ?? "—",
-      }));
-
-      setGrades(flat);
-      setClasses(Array.isArray(classesData) ? classesData : []);
-      setStudents(
-        (Array.isArray(studentsData) ? studentsData : []).map((s) => ({
-          ...s,
-          full_name: s.user?.full_name ?? s.student_number,
-        }))
-      );
-    } catch (e: any) {
-      toast.showToast(e.message || "Failed to load grade records.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  function openAdd() {
-    setEditing(null);
-    setForm({
-      student_id: students[0]?.id || "",
-      class_id: classes[0]?.id || "",
-      assessment_type: "EXAM",
-      term: "Term 1",
-      score: 85,
-      max_score: 100,
-      comments: "",
-    });
-    setModalOpen(true);
-  }
-
-  function openEdit(g: Grade) {
-    setEditing(g);
-    setForm({
-      student_id: g.student_id,
-      class_id: g.class_id,
-      assessment_type: g.assessment_type,
-      term: g.term,
-      score: g.score,
-      max_score: g.max_score,
-      comments: g.comments || "",
-    });
-    setModalOpen(true);
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      if (editing) {
-        await put(`/grades/${editing.id}`, {
-          score: Number(form.score),
-          max_score: Number(form.max_score),
-          comments: form.comments,
-        });
-        toast.showToast("Grade updated successfully!", "success");
-      } else {
-        await post("/grades", {
-          student_id: form.student_id,
-          class_id: form.class_id,
-          assessment_type: form.assessment_type,
-          term: form.term,
-          score: Number(form.score),
-          max_score: Number(form.max_score),
-          comments: form.comments,
-        });
-        toast.showToast("Grade recorded successfully!", "success");
-      }
-      setModalOpen(false);
-      loadData();
-    } catch (e: any) {
-      toast.showToast(e.message || "Failed to save grade.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!delTarget) return;
-    try {
-      await del(`/grades/${delTarget.id}`);
-      toast.showToast("Grade record removed.", "success");
-      setDelTarget(null);
-      loadData();
-    } catch (e: any) {
-      toast.showToast(e.message || "Delete failed.", "error");
-    }
-  }
-
-  const columns: Column<Grade>[] = [
-    {
-      key: "student_name",
-      label: "Student",
-      render: (g) => <span className="font-bold text-[#0f172a]">{g.student_name}</span>,
-    },
-    {
-      key: "class_name",
-      label: "Class / Subject",
-      render: (g) => <span className="text-xs text-[#64748b]">{g.class_name}</span>,
-    },
-    {
-      key: "assessment_type",
-      label: "Assessment",
-      render: (g) => (
-        <span className="rounded-md bg-[#f1f5f9] px-2 py-0.5 text-xs font-semibold text-[#334155]">
-          {g.assessment_type}
-        </span>
-      ),
-    },
-    {
-      key: "score",
-      label: "Score",
-      render: (g) => (
-        <span className="font-mono text-xs font-bold text-[#0f172a]">
-          {g.score} / {g.max_score}
-        </span>
-      ),
-    },
-    {
-      key: "percentage",
-      label: "Percentage",
-      render: (g) => (
-        <span className="text-xs font-semibold text-[#64748b]">
-          {g.percentage != null ? `${Math.round(g.percentage)}%` : "—"}
-        </span>
-      ),
-    },
-    {
-      key: "grade_letter",
-      label: "Grade",
-      render: (g) => <GradeBadge letter={g.grade_letter} />,
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      width: 100,
-      render: (g) =>
-        canManage ? (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => openEdit(g)}
-              title="Edit Grade"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#1267e8] transition hover:bg-[#eaf2ff]"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setDelTarget(g)}
-              title="Delete Grade"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#fecaca] bg-white text-[#dc2626] transition hover:bg-[#fef2f2]"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-[#94a3b8]">Verified</span>
-        ),
-    },
-  ];
+export default function GradesPage() {
+  const [streamsOpen, setStreamsOpen] = useState(false);
+  const [addGradeOpen, setAddGradeOpen] = useState(false);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-black tracking-tight text-[#0b1f3a] sm:text-2xl">
-              Academic Grades
-            </h1>
-            {!loading && (
-              <span className="rounded-full bg-[#eaf2ff] px-2.5 py-0.5 text-xs font-bold text-[#1267e8]">
-                {grades.length} Entries
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-[#64748b]">
-            Continuous assessments, mid-term evaluations, and official final grades.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3 py-2 text-xs">
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth={2}>
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              placeholder="Search grades…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent text-[#0f172a] placeholder-[#94a3b8] outline-none"
-            />
-          </div>
-
-          {canManage && (
-            <button
-              onClick={openAdd}
-              className="shimmer-btn rounded-xl px-4 py-2 text-xs font-bold shadow-sm"
-            >
-              + Record Grade
-            </button>
-          )}
+      <div className="flex justify-between items-center mb-6 px-2">
+        <h1 className="text-2xl font-bold text-slate-900">Grades</h1>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setStreamsOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm transition-colors"
+          >
+            Streams
+          </button>
+          <button 
+            onClick={() => setAddGradeOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm transition-colors"
+          >
+            Add Grade
+          </button>
         </div>
       </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={grades}
-        loading={loading}
-        searchQuery={search}
-        searchKeys={["student_name", "class_name", "assessment_type", "grade_letter"]}
-        emptyMessage="No assessment grades recorded yet."
-        emptyIcon="📊"
-      />
-
-      {/* Modal */}
-      <Modal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={editing ? "Update Assessment Grade" : "Record Assessment Grade"}
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!editing && (
-            <>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">Student</label>
-                <select
-                  required
-                  value={form.student_id}
-                  onChange={(e) => setForm({ ...form, student_id: e.target.value })}
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.full_name} ({s.student_number})
-                    </option>
-                  ))}
-                </select>
+      {/* Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
+        {mockGrades.map((grade, index) => {
+          const color = COLORS[index % COLORS.length];
+          return (
+            <div key={grade.id} className={`bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col border-t-[3px] ${color.border} relative`}>
+              {/* Status Dot */}
+              <div className="absolute top-3 left-3 w-2 h-2 rounded-full bg-[#34d399]"></div>
+              
+              <div className="p-5 pt-8 pb-4 flex relative">
+                <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${color.bg} ${color.text}`}>
+                  <BookMarked size={20} strokeWidth={2} />
+                </div>
+                <div className="flex-1 flex justify-center items-center gap-4 pr-6">
+                  <span className="font-extrabold text-[22px] text-slate-900">{grade.name}</span>
+                  <span className="font-bold text-[15px] text-slate-800">{grade.stream}</span>
+                </div>
+                <button className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                </button>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-bold text-[#334155]">Class</label>
-                <select
-                  required
-                  value={form.class_id}
-                  onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-                  className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-                >
-                  {classes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.class_name}
-                    </option>
-                  ))}
-                </select>
+              {/* Teacher Info */}
+              <div className="px-5 py-3 border-t border-slate-100 text-center min-h-[45px] flex items-center justify-center">
+                {grade.teacher && (
+                  <span className="text-[12px] font-semibold text-slate-700">
+                    {grade.teacher}
+                  </span>
+                )}
               </div>
-            </>
-          )}
 
-          <div className="grid grid-cols-2 gap-3">
+              {/* Footer */}
+              <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 mt-auto flex justify-between items-center rounded-b-2xl">
+                <span className="text-[11px] font-bold text-slate-800">Year: 2026</span>
+                <span className="text-[11px] font-bold text-slate-800">Students: {grade.students}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Streams Modal */}
+      <Modal open={streamsOpen} onClose={() => setStreamsOpen(false)} title="Streams" maxWidth={700}>
+        <div className="space-y-6">
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1.5 rounded-lg border border-red-100 font-semibold text-sm">
+              <span>East</span>
+              <button className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+            </div>
+            <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-semibold text-sm">
+              <span>North</span>
+              <button className="text-green-400 hover:text-green-600"><Trash2 size={14} /></button>
+            </div>
+            <div className="flex items-center gap-2 bg-sky-50 text-sky-700 px-3 py-1.5 rounded-lg border border-sky-100 font-semibold text-sm">
+              <span>West</span>
+              <button className="text-sky-400 hover:text-sky-600"><Trash2 size={14} /></button>
+            </div>
+            <div className="flex items-center gap-2 bg-pink-50 text-pink-700 px-3 py-1.5 rounded-lg border border-pink-100 font-semibold text-sm">
+              <span>South</span>
+              <button className="text-pink-400 hover:text-pink-600"><Trash2 size={14} /></button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <input 
+              type="text" 
+              placeholder="Add stream" 
+              className="flex-1 max-w-[200px] border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" 
+            />
+            <button className="flex items-center gap-2 border border-dashed border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+              <Plus size={16} /> Add Input Field
+            </button>
+          </div>
+          
+          <div className="pt-2">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
+              Submit
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Grade Modal */}
+      <Modal open={addGradeOpen} onClose={() => setAddGradeOpen(false)} title="Add Grade" maxWidth={700}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">Assessment Type</label>
-              <select
-                value={form.assessment_type}
-                onChange={(e) => setForm({ ...form, assessment_type: e.target.value })}
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              >
-                {ASSESSMENT_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Grade</label>
+              <input type="text" placeholder="Grade" className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">Academic Term</label>
-              <select
-                value={form.term}
-                onChange={(e) => setForm({ ...form, term: e.target.value })}
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              >
-                <option value="Term 1">Term 1</option>
-                <option value="Term 2">Term 2</option>
-                <option value="Term 3">Term 3</option>
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Stream</label>
+              <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 appearance-none bg-white">
+                <option value=""></option>
+                <option value="North">North</option>
+                <option value="East">East</option>
+                <option value="West">West</option>
+                <option value="South">South</option>
               </select>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">Score Obtained</label>
-              <input
-                required
-                type="number"
-                min={0}
-                max={Number(form.max_score)}
-                value={form.score}
-                onChange={(e) => setForm({ ...form, score: Number(e.target.value) })}
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              />
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Year</label>
+              <input type="text" defaultValue="2026" className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-bold text-[#334155]">Max Score</label>
-              <input
-                required
-                type="number"
-                min={1}
-                value={form.max_score}
-                onChange={(e) => setForm({ ...form, max_score: Number(e.target.value) })}
-                className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-              />
+              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Grade status</label>
+              <label className="flex items-center gap-2 cursor-pointer mt-2">
+                <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span className="text-sm font-medium text-slate-700">Is Active?</span>
+              </label>
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-[#334155]">Teacher Remarks</label>
-            <input
-              value={form.comments}
-              onChange={(e) => setForm({ ...form, comments: e.target.value })}
-              placeholder="e.g. Excellent work on analytical problems."
-              className="input-glow w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs text-[#0f172a] outline-none"
-            />
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">Assign Class Teacher(s)</label>
+            <select className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 appearance-none bg-white">
+              <option value="">Select Teacher(s)</option>
+              <option value="1">Claudia Acosta Howard</option>
+              <option value="2">Richard Stennett Marrero</option>
+            </select>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-[#e2e8f0]">
-            <button
-              type="button"
-              onClick={() => setModalOpen(false)}
-              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs transition hover:bg-[#f8fafc]"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="shimmer-btn rounded-xl px-5 py-2 text-xs font-bold shadow-sm"
-            >
-              {saving ? "Saving…" : editing ? "Update Grade" : "Submit Grade"}
+          <div className="pt-2">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">
+              Submit
             </button>
           </div>
-        </form>
+        </div>
       </Modal>
-
-      {/* Delete Confirmation */}
-      {delTarget && (
-        <Modal open={true} onClose={() => setDelTarget(null)} title="Delete Grade Record" maxWidth={400}>
-          <p className="text-sm text-[#475569]">
-            Delete the grade record for <strong className="text-[#0f172a]">{delTarget.student_name}</strong>?
-          </p>
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              onClick={() => setDelTarget(null)}
-              className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#334155] shadow-xs"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDelete}
-              className="rounded-xl bg-[#dc2626] px-4 py-2 text-xs font-bold text-white shadow-xs"
-            >
-              Delete
-            </button>
-          </div>
-        </Modal>
-      )}
     </div>
-  );
-}
-
-export default function GradesPage() {
-  return (
-    <ToastProvider>
-      <GradesContent />
-    </ToastProvider>
   );
 }

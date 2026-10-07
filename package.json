@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev frontend",
-    "build": "next build frontend && node scripts/prepare-vercel-output.js",
-    "start": "next start frontend",
-    "lint": "next lint"
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build && node scripts/prepare-vercel-output.js",
+    "start": "npm --prefix frontend run start",
+    "lint": "npm --prefix frontend run lint"
   },
   "dependencies": {
     "next": "14.2.5",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface Column<T> {
   key: string;
@@ -45,7 +46,7 @@ function SkeletonRow({ cols }: { cols: number }) {
       {Array.from({ length: cols }).map((_, i) => (
         <td key={i} className="px-5 py-4">
           <div
-            className="skeleton h-4"
+            className="h-4 bg-slate-100 rounded-md animate-pulse"
             style={{ width: i === 0 ? "40px" : `${55 + (i * 12) % 35}%` }}
           />
         </td>
@@ -79,23 +80,23 @@ export default function DataTable<T extends { id: string }>({
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-sm">
+    <div className="w-full bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
+            <tr className="border-b border-slate-100">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   style={{ width: col.width }}
-                  className="px-5 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#64748b]"
+                  className="px-6 py-4 text-xs font-semibold text-slate-800"
                 >
                   {col.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#f1f5f9]">
+          <tbody className="divide-y divide-slate-50">
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <SkeletonRow key={i} cols={columns.length} />
@@ -110,10 +111,10 @@ export default function DataTable<T extends { id: string }>({
               paged.map((row) => (
                 <tr
                   key={row.id}
-                  className="transition-colors hover:bg-[#f8fafc]/80"
+                  className="transition-colors hover:bg-slate-50/50"
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-5 py-3.5 text-sm text-[#1e293b]">
+                    <td key={col.key} className="px-6 py-4 text-[13px] font-medium text-slate-600">
                       {col.render ? col.render(row) : String((row as any)[col.key] ?? "—")}
                     </td>
                   ))}
@@ -126,30 +127,24 @@ export default function DataTable<T extends { id: string }>({
 
       {/* Pagination Footer */}
       {!loading && filtered.length > pageSize && (
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#e2e8f0] bg-[#f8fafc] px-5 py-3 text-xs">
-          <p className="text-[#64748b]">
-            Showing <span className="font-semibold text-[#0f172a]">{(safePage - 1) * pageSize + 1}</span>–
-            <span className="font-semibold text-[#0f172a]">{Math.min(safePage * pageSize, filtered.length)}</span> of{" "}
-            <span className="font-semibold text-[#0f172a]">{filtered.length}</span> records
-          </p>
-
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end px-6 py-4 border-t border-slate-50">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 font-semibold text-[#334155] shadow-xs transition hover:bg-[#f1f5f9] disabled:opacity-40 disabled:hover:bg-white"
+              className="flex h-8 w-8 items-center justify-center text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:hover:text-slate-400"
             >
-              Previous
+              <ChevronLeft size={16} />
             </button>
-            <span className="rounded-lg bg-[#eaf2ff] px-2.5 py-1 font-bold text-[#1267e8]">
-              {safePage} / {totalPages}
-            </span>
+            <button className="flex h-8 w-8 items-center justify-center rounded-md border border-blue-200 text-sm font-semibold text-blue-600 shadow-sm">
+              {safePage}
+            </button>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 font-semibold text-[#334155] shadow-xs transition hover:bg-[#f1f5f9] disabled:opacity-40 disabled:hover:bg-white"
+              className="flex h-8 w-8 items-center justify-center text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:hover:text-slate-400"
             >
-              Next
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>

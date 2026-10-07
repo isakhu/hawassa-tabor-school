@@ -2,7 +2,7 @@
 
 import { BookMarked } from "lucide-react";
 
-interface AttendanceClass {
+interface LessonClass {
   id: string;
   name: string;
   stream: string;
@@ -10,7 +10,7 @@ interface AttendanceClass {
   students: number;
 }
 
-const mockClasses: AttendanceClass[] = [];
+const mockClasses: LessonClass[] = [];
 
 const COLORS = [
   { bg: "bg-red-100", text: "text-red-700", border: "border-red-200" },
@@ -19,12 +19,12 @@ const COLORS = [
   { bg: "bg-purple-100", text: "text-purple-700", border: "border-purple-200" },
 ];
 
-export default function AttendancePage() {
+export default function LessonsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-2">
-        <h1 className="text-2xl font-bold text-slate-900">Attendance</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Lessons</h1>
       </div>
 
       {/* Grid */}

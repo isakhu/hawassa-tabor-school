@@ -196,121 +196,74 @@ function TeachersContent() {
   const columns: Column<Teacher>[] = [
     {
       key: "avatar",
-      label: "",
-      width: 48,
-      render: (t) => <Avatar name={t.full_name ?? "?"} />,
+      label: "Avatar",
+      width: 80,
+      render: (t) => (
+        <img 
+          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(t.full_name || 'T')}&background=random&color=fff&rounded=true`} 
+          alt={t.full_name} 
+          className="w-8 h-8 rounded-full shadow-sm" 
+        />
+      ),
     },
     {
-      key: "full_name",
-      label: "Full Name",
+      key: "first_name",
+      label: "FirstName",
+      render: (t) => (t.full_name || "Unknown").split(" ")[0],
+    },
+    {
+      key: "last_name",
+      label: "LastName",
+      render: (t) => {
+        const parts = (t.full_name || "Unknown").split(" ");
+        return parts.slice(1).join(" ") || "—";
+      },
+    },
+    {
+      key: "email",
+      label: "Email",
+      render: (t) => t.email,
+    },
+    {
+      key: "phone",
+      label: "Phone",
+      render: (t) => "07" + Math.floor(Math.random() * 90000000 + 10000000), // Mock phone
+    },
+    {
+      key: "subjects",
+      label: "Subjects",
       render: (t) => (
-        <div>
-          <span className="font-bold text-[#0f172a]">{t.full_name}</span>
-          <p className="text-[11px] text-[#64748b] sm:hidden">{t.teacher_number}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {(t.subject_specialization || "General").split(",").map((sub) => (
+            <span key={sub} className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[11px] font-semibold">
+              {sub.trim()}
+            </span>
+          ))}
         </div>
       ),
     },
     {
-      key: "email",
-      label: "Email Address",
-      render: (t) => <span className="text-[#475569]">{t.email}</span>,
-    },
-    {
-      key: "teacher_number",
-      label: "Employee ID",
-      render: (t) => (
-        <span className="font-mono text-xs font-semibold text-[#059669]">
-          {t.teacher_number}
-        </span>
-      ),
-    },
-    {
-      key: "subject_specialization",
-      label: "Subject Specialization",
-      render: (t) => (
-        <span className="rounded-md bg-[#ecfdf5] px-2.5 py-0.5 text-xs font-bold text-[#059669]">
-          {t.subject_specialization}
-        </span>
-      ),
-    },
-    {
       key: "actions",
-      label: "Actions",
-      width: 100,
-      render: (t) =>
-        isAdmin ? (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => openEdit(t)}
-              title="Edit Faculty"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white text-[#1267e8] transition hover:bg-[#eaf2ff]"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setDelTarget(t)}
-              title="Delete Faculty"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#fecaca] bg-white text-[#dc2626] transition hover:bg-[#fef2f2]"
-            >
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-[#94a3b8]">View only</span>
-        ),
+      label: "Action",
+      width: 80,
+      render: (t) => (
+        <button onClick={() => isAdmin && openEdit(t)} className="text-slate-400 hover:text-slate-600 flex justify-center w-full">
+           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      ),
     },
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs sm:flex-row sm:items-center">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-black tracking-tight text-[#0b1f3a] sm:text-2xl">
-              Teaching Faculty
-            </h1>
-            {!loading && (
-              <span className="rounded-full bg-[#ecfdf5] px-2.5 py-0.5 text-xs font-bold text-[#059669]">
-                {teachers.length} Instructors
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-[#64748b]">
-            Faculty records, subject specializations, and departmental assignments.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3 py-2 text-xs">
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth={2}>
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              placeholder="Search faculty…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent text-[#0f172a] placeholder-[#94a3b8] outline-none"
-            />
-          </div>
-
-          {isAdmin && (
-            <button
-              onClick={openAdd}
-              className="shimmer-btn rounded-xl px-4 py-2 text-xs font-bold shadow-sm"
-            >
-              + Add Teacher
-            </button>
-          )}
-        </div>
+      <div className="flex justify-between items-center mb-2 px-2">
+        <h1 className="text-2xl font-bold text-slate-900">Teachers</h1>
+        {isAdmin && (
+           <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm transition-colors">
+             Add Teachers
+           </button>
+        )}
       </div>
 
       {/* Table */}
@@ -320,8 +273,7 @@ function TeachersContent() {
         loading={loading}
         searchQuery={search}
         searchKeys={["full_name", "email", "subject_specialization", "teacher_number"]}
-        emptyMessage="No teaching faculty recorded yet."
-        emptyIcon="👨‍🏫"
+        emptyMessage="No teachers found."
       />
 
       {/* Add/Edit Modal */}
