@@ -41,7 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
-      <body className="min-h-screen antialiased" style={{ backgroundColor: "#f6f9fd" }}>
+      <body className="min-h-screen antialiased bg-[#f6f9fd] relative overflow-x-hidden selection:bg-blue-200 selection:text-blue-900">
+        
+        {/* Vibrant Gradient Meshes */}
+        <div className="fixed top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-indigo-100/40 via-purple-100/30 to-blue-50/20 blur-3xl pointer-events-none -z-10"></div>
+        <div className="fixed bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-blue-100/40 via-sky-50/30 to-transparent blur-3xl pointer-events-none -z-10"></div>
+
         <ServiceWorkerCleanup />
         {children}
       </body>
