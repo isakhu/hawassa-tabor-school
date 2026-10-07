@@ -61,9 +61,11 @@ export async function apiFetch<T = unknown>(
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       document.cookie = `${STORAGE_KEYS.TOKEN}=; path=/; max-age=0; SameSite=Lax`;
-      window.location.href = ROUTES.LOGIN;
+      if (window.location.pathname !== ROUTES.LOGIN) {
+        window.location.href = ROUTES.LOGIN;
+      }
     }
-    throw new Error("Session expired. Please log in again.");
+    throw new Error("Incorrect username or password. Please try again.");
   }
 
   if (response.status === 204) {
