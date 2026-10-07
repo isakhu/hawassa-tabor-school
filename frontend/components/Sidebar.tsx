@@ -129,10 +129,10 @@ export default function Sidebar({ user }: { user: AuthUser }) {
       <div className="p-4 border-t border-slate-100 bg-slate-50/50 m-2 rounded-xl mb-4 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-purple-100 flex items-center justify-center border border-blue-200 shadow-sm shrink-0">
-             <span className="text-blue-700 font-bold text-sm">{user.username.substring(0, 2).toUpperCase()}</span>
+             <span className="text-blue-700 font-bold text-sm">{(user.full_name || "AD").substring(0, 2).toUpperCase()}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-slate-800 truncate">{user.username}</p>
+            <p className="text-sm font-bold text-slate-800 truncate">{user.full_name}</p>
             <p className="text-xs font-semibold text-blue-600 truncate">{roleName(user.role)}</p>
           </div>
         </div>
